@@ -1,5 +1,19 @@
 module.exports = {
   KhachHang: require('./khachHang'),
   User: require('./user'),
-  // Thêm các model khác tại đây khi cần
+  NhaXe: require('./nhaXe'),
+  ChuyenXe: require('./chuyenXe'),
+  VeXe: require('./veXe'),
+  DanhGia: require('./danhGia'),
+  CSKH: require('./cskh'),
+  ThanhToan: require('./thanhToan'),
+  NhanVien: require('./nhanVien'),
+  Xe: require('./xe'),
+  LoaiXe: require('./loaiXe'),
+  LichSuVeXe: require('./lichSuVeXe'),
+  CSKH: require('./cskh'),
+  ThongBao: require('./thongBao'),
+  TuyenXe: require('./tuyenXe'),
+  KhuyenMai: require('./khuyenMai'),
+  ThanhToan: require('./thanhToan'),
 };
