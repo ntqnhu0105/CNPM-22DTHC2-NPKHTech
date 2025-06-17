@@ -5,7 +5,6 @@ module.exports = {
   ChuyenXe: require('./chuyenXe'),
   VeXe: require('./veXe'),
   DanhGia: require('./danhGia'),
-  CSKH: require('./cskh'),
   ThanhToan: require('./thanhToan'),
   NhanVien: require('./nhanVien'),
   Xe: require('./xe'),
@@ -15,5 +14,6 @@ module.exports = {
   ThongBao: require('./thongBao'),
   TuyenXe: require('./tuyenXe'),
   KhuyenMai: require('./khuyenMai'),
-  ThanhToan: require('./thanhToan'),
+  SoGheSoGiuong: require('./soGheSoGiuong'),
+  TaiXe: require('./taiXe'),
 };

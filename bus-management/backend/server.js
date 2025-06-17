@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const khachHangRoutes = require('./routes/khachHangRoutes');
 const authRoutes = require('./routes/authRoutes');
+const chuyenXeRoutes = require('./routes/chuyenXeRoutes');
 const errorMiddleware = require('./middleware/errorMiddleware');
 
 // Tải biến môi trường
@@ -21,6 +22,7 @@ connectDB();
 // Routes
 app.use('/api/khachhang', khachHangRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/chuyenxe', chuyenXeRoutes);
 
 // Middleware xử lý lỗi
 app.use(errorMiddleware);
