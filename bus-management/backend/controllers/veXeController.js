@@ -1,4 +1,4 @@
-const { getAllVeXe, createVeXe, updateVeXe, deleteVeXe } = require('../services/veXeService');
+const { getAllVeXe, createVeXe, updateVeXe, deleteVeXe: deleteVeXeService } = require('../services/veXeService');
 const { validationResult } = require('express-validator');
 
 const getVeXe = async (req, res, next) => {
@@ -46,7 +46,7 @@ const deleteVeXe = async (req, res, next) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const result = await deleteVeXe(req.params.id);
+    const result = await deleteVeXeService(req.params.id);
     res.json(result);
   } catch (err) {
     next(err);

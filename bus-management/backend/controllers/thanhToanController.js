@@ -1,4 +1,4 @@
-const { getAllThanhToan, createThanhToan, updateThanhToan, deleteThanhToan } = require('../services/thanhToanService');
+const { getAllThanhToan, createThanhToan, updateThanhToan, deleteThanhToan: deleteThanhToanService } = require('../services/thanhToanService');
 const { validationResult } = require('express-validator');
 
 const getThanhToan = async (req, res, next) => {
@@ -46,7 +46,7 @@ const deleteThanhToan = async (req, res, next) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const result = await deleteThanhToan(req.params.id);
+    const result = await deleteThanhToanService(req.params.id);
     res.json(result);
   } catch (err) {
     next(err);

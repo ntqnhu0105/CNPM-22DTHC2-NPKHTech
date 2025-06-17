@@ -1,4 +1,4 @@
-const { getAllLoaiXe, createLoaiXe, updateLoaiXe, deleteLoaiXe } = require('../services/loaiXeService');
+const { getAllLoaiXe, createLoaiXe, updateLoaiXe, deleteLoaiXe: deleteLoaiXeService } = require('../services/loaiXeService');
 const { validationResult } = require('express-validator');
 
 const getLoaiXe = async (req, res, next) => {
@@ -46,7 +46,7 @@ const deleteLoaiXe = async (req, res, next) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const result = await deleteLoaiXe(req.params.id);
+    const result = await deleteLoaiXeService(req.params.id);
     res.json(result);
   } catch (err) {
     next(err);

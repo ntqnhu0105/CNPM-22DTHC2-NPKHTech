@@ -1,4 +1,4 @@
-const { getAllCSKH, createCSKH, updateCSKH, deleteCSKH } = require('../services/cskhService');
+const { getAllCSKH, createCSKH, updateCSKH, deleteCSKH: deleteCSKHService } = require('../services/cskhService');
 const { validationResult } = require('express-validator');
 
 const getCSKH = async (req, res, next) => {
@@ -46,7 +46,7 @@ const deleteCSKH = async (req, res, next) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const result = await deleteCSKH(req.params.id);
+    const result = await deleteCSKHService(req.params.id);
     res.json(result);
   } catch (err) {
     next(err);

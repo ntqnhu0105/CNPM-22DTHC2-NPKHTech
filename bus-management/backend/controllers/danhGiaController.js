@@ -1,4 +1,4 @@
-const { getAllDanhGia, createDanhGia, updateDanhGia, deleteDanhGia } = require('../services/danhGiaService');
+const { getAllDanhGia, createDanhGia, updateDanhGia, deleteDanhGia: deleteDanhGiaService } = require('../services/danhGiaService');
 const { validationResult } = require('express-validator');
 
 const getDanhGia = async (req, res, next) => {
@@ -46,7 +46,7 @@ const deleteDanhGia = async (req, res, next) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const result = await deleteDanhGia(req.params.id);
+    const result = await deleteDanhGiaService(req.params.id);
     res.json(result);
   } catch (err) {
     next(err);

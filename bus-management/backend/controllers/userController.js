@@ -1,4 +1,4 @@
-const { getAllUser, createUser, updateUser, deleteUser } = require('../services/userService');
+const { getAllUser, createUser, updateUser, deleteUser: deleteUserService } = require('../services/userService');
 const { validationResult } = require('express-validator');
 
 const getUser = async (req, res, next) => {
@@ -46,7 +46,7 @@ const deleteUser = async (req, res, next) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const result = await deleteUser(req.params.id);
+    const result = await deleteUserService(req.params.id);
     res.json(result);
   } catch (err) {
     next(err);

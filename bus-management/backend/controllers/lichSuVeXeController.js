@@ -1,4 +1,4 @@
-const { getAllLichSuVeXe, createLichSuVeXe, updateLichSuVeXe, deleteLichSuVeXe } = require('../services/lichSuVeXeService');
+const { getAllLichSuVeXe, createLichSuVeXe, updateLichSuVeXe, deleteLichSuVeXe: deleteLichSuVeXeService } = require('../services/lichSuVeXeService');
 const { validationResult } = require('express-validator');
 
 const getLichSuVeXe = async (req, res, next) => {
@@ -46,7 +46,7 @@ const deleteLichSuVeXe = async (req, res, next) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const result = await deleteLichSuVeXe(req.params.id);
+    const result = await deleteLichSuVeXeService(req.params.id);
     res.json(result);
   } catch (err) {
     next(err);

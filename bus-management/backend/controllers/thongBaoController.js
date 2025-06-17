@@ -1,4 +1,4 @@
-const { getAllThongBao, createThongBao, updateThongBao, deleteThongBao } = require('../services/thongBaoService');
+const { getAllThongBao, createThongBao, updateThongBao, deleteThongBao: deleteThongBaoService } = require('../services/thongBaoService');
 const { validationResult } = require('express-validator');
 
 const getThongBao = async (req, res, next) => {
@@ -46,7 +46,7 @@ const deleteThongBao = async (req, res, next) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const result = await deleteThongBao(req.params.id);
+    const result = await deleteThongBaoService(req.params.id);
     res.json(result);
   } catch (err) {
     next(err);

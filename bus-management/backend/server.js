@@ -59,23 +59,3 @@ app.use(errorMiddleware);
 // Khởi động server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server đang chạy trên cổng ${PORT}`));
-
-module.exports = {
-  ChuyenXe: require('./chuyenXe'),
-  CSKH: require('./cskh'),
-  DanhGia: require('./danhGia'),
-  KhachHang: require('./khachHang'),
-  KhuyenMai: require('./khuyenMai'),
-  LichSuVeXe: require('./lichSuVeXe'),
-  LoaiXe: require('./loaiXe'),
-  NhaXe: require('./nhaXe'),
-  NhanVien: require('./nhanVien'),
-  SoGheSoGiuong: require('./soGheSoGiuong'),
-  TaiXe: require('./taiXe'),
-  ThanhToan: require('./thanhToan'),
-  ThongBao: require('./thongBao'),
-  TuyenXe: require('./tuyenXe'),
-  User: require('./user'),
-  VeXe: require('./veXe'),
-  Xe: require('./xe'),
-};

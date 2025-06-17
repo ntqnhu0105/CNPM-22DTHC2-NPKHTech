@@ -1,4 +1,4 @@
-const { getAllChuyenXe, createChuyenXe, updateChuyenXe, deleteChuyenXe } = require('../services/chuyenXeService');
+const { getAllChuyenXe, createChuyenXe, updateChuyenXe, deleteChuyenXe: deleteChuyenXeService } = require('../services/chuyenXeService');
 const { validationResult } = require('express-validator');
 
 const getChuyenXe = async (req, res, next) => {
@@ -46,7 +46,7 @@ const deleteChuyenXe = async (req, res, next) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const result = await deleteChuyenXe(req.params.id);
+    const result = await deleteChuyenXeService(req.params.id);
     res.json(result);
   } catch (err) {
     next(err);

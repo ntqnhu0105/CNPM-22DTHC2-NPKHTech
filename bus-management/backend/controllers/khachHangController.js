@@ -1,4 +1,4 @@
-const { getAllKhachHang, createKhachHang, updateKhachHang, deleteKhachHang } = require('../services/khachHangService');
+const { getAllKhachHang, createKhachHang, updateKhachHang, deleteKhachHang: deleteKhachHangService } = require('../services/khachHangService');
 const { validationResult } = require('express-validator');
 
 const getKhachHang = async (req, res, next) => {
@@ -46,7 +46,7 @@ const deleteKhachHang = async (req, res, next) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const result = await deleteKhachHang(req.params.id);
+    const result = await deleteKhachHangService(req.params.id);
     res.json(result);
   } catch (err) {
     next(err);

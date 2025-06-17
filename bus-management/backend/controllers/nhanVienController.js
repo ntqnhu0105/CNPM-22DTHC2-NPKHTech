@@ -1,4 +1,4 @@
-const { getAllNhanVien, createNhanVien, updateNhanVien, deleteNhanVien } = require('../services/nhanVienService');
+const { getAllNhanVien, createNhanVien, updateNhanVien, deleteNhanVien: deleteNhanVienService } = require('../services/nhanVienService');
 const { validationResult } = require('express-validator');
 
 const getNhanVien = async (req, res, next) => {
@@ -46,7 +46,7 @@ const deleteNhanVien = async (req, res, next) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const result = await deleteNhanVien(req.params.id);
+    const result = await deleteNhanVienService(req.params.id);
     res.json(result);
   } catch (err) {
     next(err);

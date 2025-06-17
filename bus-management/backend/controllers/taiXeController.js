@@ -1,4 +1,4 @@
-const { getAllTaiXe, createTaiXe, updateTaiXe, deleteTaiXe } = require('../services/taiXeService');
+const { getAllTaiXe, createTaiXe, updateTaiXe, deleteTaiXe: deleteTaiXeService } = require('../services/taiXeService');
 const { validationResult } = require('express-validator');
 
 const getTaiXe = async (req, res, next) => {
@@ -46,7 +46,7 @@ const deleteTaiXe = async (req, res, next) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const result = await deleteTaiXe(req.params.id);
+    const result = await deleteTaiXeService(req.params.id);
     res.json(result);
   } catch (err) {
     next(err);

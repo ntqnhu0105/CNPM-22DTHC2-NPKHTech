@@ -1,4 +1,4 @@
-const { getAllSoGheSoGiuong, createSoGheSoGiuong, updateSoGheSoGiuong, deleteSoGheSoGiuong } = require('../services/soGheSoGiuongService');
+const { getAllSoGheSoGiuong, createSoGheSoGiuong, updateSoGheSoGiuong, deleteSoGheSoGiuong: deleteSoGheSoGiuongService } = require('../services/soGheSoGiuongService');
 const { validationResult } = require('express-validator');
 
 const getSoGheSoGiuong = async (req, res, next) => {
@@ -46,7 +46,7 @@ const deleteSoGheSoGiuong = async (req, res, next) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const result = await deleteSoGheSoGiuong(req.params.id);
+    const result = await deleteSoGheSoGiuongService(req.params.id);
     res.json(result);
   } catch (err) {
     next(err);
