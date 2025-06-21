@@ -44,7 +44,7 @@ app.use('/api/lichsuve', lichSuVeXeRoutes);
 app.use('/api/loaixe', loaiXeRoutes);
 app.use('/api/nhaxe', nhaXeRoutes);
 app.use('/api/nhanvien', nhanVienRoutes);
-app.use('/api/soghesogiuong', soGheSoGiuongRoutes);
+app.use('/api/soghe-sogiuong', soGheSoGiuongRoutes);
 app.use('/api/taixe', taiXeRoutes);
 app.use('/api/thanhtoan', thanhToanRoutes);
 app.use('/api/thongbao', thongBaoRoutes);

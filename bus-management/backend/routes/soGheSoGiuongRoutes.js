@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, param } = require('express-validator');
-const { getSoGheSoGiuong, postSoGheSoGiuong, putSoGheSoGiuong, deleteSoGheSoGiuong } = require('../controllers/soGheSoGiuongController');
+const { getSoGheSoGiuong, postSoGheSoGiuong, postBulkSoGheSoGiuong, putSoGheSoGiuong, deleteSoGheSoGiuong } = require('../controllers/soGheSoGiuongController');
 const authMiddleware = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -15,6 +15,15 @@ router.post(
   ],
   authMiddleware(['Admin', 'Staff']),
   postSoGheSoGiuong
+);
+router.post(
+  '/bulk',
+  [
+    body('xeId').isMongoId().withMessage('ID xe không hợp lệ'),
+    body('soGhe').isInt({ min: 1 }).withMessage('Số ghế phải là số nguyên dương'),
+  ],
+  authMiddleware(['Admin', 'Staff']),
+  postBulkSoGheSoGiuong
 );
 router.put(
   '/:id',
