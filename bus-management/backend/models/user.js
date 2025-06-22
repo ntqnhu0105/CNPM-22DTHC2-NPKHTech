@@ -10,6 +10,7 @@ const UserSchema = new Schema({
     enum: ['Admin', 'Staff', 'Customer']
   },
   khachHangId: { type: Schema.Types.ObjectId, ref: 'KhachHang', default: null },
+  nhanVienId: { type: Schema.Types.ObjectId, ref: 'NhanVien', default: null },
   lastLogin: { type: Date }
 });
 

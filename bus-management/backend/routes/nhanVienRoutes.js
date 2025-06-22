@@ -9,13 +9,11 @@ router.get('/', authMiddleware(['Admin', 'Staff']), getNhanVien);
 router.post(
   '/',
   [
-    body('cccd').isLength({ max: 12 }).withMessage('CCCD tối đa 12 ký tự'),
+    body('username').notEmpty().withMessage('Tên đăng nhập là bắt buộc'),
+    body('password').isLength({ min: 6 }).withMessage('Mật khẩu phải có ít nhất 6 ký tự'),
     body('hoVaTen').notEmpty().withMessage('Họ và tên là bắt buộc'),
-    body('nhaXeId').isMongoId().withMessage('ID nhà xe không hợp lệ'),
-    body('sdt').matches(/^[0-9]{10,11}$/).withMessage('SĐT phải có 10 hoặc 11 chữ số'),
-    body('email').optional().isEmail().withMessage('Email không hợp lệ'),
-    body('diaChi').optional().isLength({ max: 100 }).withMessage('Địa chỉ tối đa 100 ký tự'),
-    body('ngaySinh').optional().isISO8601().withMessage('Ngày sinh không hợp lệ'),
+    body('sdt').notEmpty().withMessage('Số điện thoại là bắt buộc'),
+    body('chucVu').notEmpty().withMessage('Chức vụ là bắt buộc'),
   ],
   authMiddleware(['Admin']),
   postNhanVien

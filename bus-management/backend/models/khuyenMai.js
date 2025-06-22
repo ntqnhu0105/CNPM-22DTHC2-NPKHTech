@@ -2,13 +2,15 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const KhuyenMaiSchema = new Schema({
-  nhaXeId: { type: Schema.Types.ObjectId, ref: 'NhaXe', required: true },
-  code: { type: String, required: true, unique: true, maxlength: 20 },
-  discount: { type: Number, required: true },
-  validFrom: { type: Date, required: true },
-  validTo: { type: Date, required: true },
-  maxUsage: { type: Number },
-  usageCount: { type: Number, default: 0 }
+  tenKhuyenMai: { type: String, required: true, maxlength: 100 },
+  phanTramGiamGia: { type: Number, required: true, min: 0, max: 100 },
+  ngayBatDau: { type: Date, required: true },
+  ngayKetThuc: { type: Date, required: true },
+  trangThai: { 
+    type: String, 
+    default: 'Active', 
+    enum: ['Active', 'Inactive', 'Expired'] 
+  }
 });
 
 module.exports = mongoose.model('KhuyenMai', KhuyenMaiSchema);

@@ -5,7 +5,12 @@ const XeSchema = new Schema({
   bienSoXe: { type: String, required: true, maxlength: 12 },
   loaiXeId: { type: Schema.Types.ObjectId, ref: 'LoaiXe', required: true },
   nhaXeId: { type: Schema.Types.ObjectId, ref: 'NhaXe', required: true },
-  soGhe: { type: Number, required: true }
+  soGhe: { type: Number, required: true },
+  trangThai: {
+    type: String,
+    default: 'Active',
+    enum: ['Active', 'Inactive']
+  }
 });
 
 XeSchema.index({ loaiXeId: 1 });
