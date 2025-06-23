@@ -72,13 +72,56 @@
                 <span>Tài xế: {{ chuyenXe.taiXeId.hoVaTen }}</span>
               </div>
             </div>
-            <button class="btn btn-success w-100 mt-3 fw-bold" @click="bookTicket(chuyenXe._id)">
+            <button class="btn btn-success w-100 mt-3 fw-bold" @click="openSeatSelection(chuyenXe)">
               <i class="bi bi-ticket-detailed me-2"></i>Đặt vé
             </button>
           </div>
         </div>
       </div>
     </section>
+    <!-- Seat Selection Modal -->
+    <div class="modal fade" id="seatModal" tabindex="-1" aria-labelledby="seatModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="seatModalLabel">Chọn ghế</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="loadingSeats" class="text-center">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Đang tải...</span>
+              </div>
+            </div>
+            <div v-else-if="availableSeats.length === 0" class="alert alert-warning">
+              Không còn ghế trống.
+            </div>
+            <div v-else class="seat-grid">
+              <button
+                v-for="seat in availableSeats"
+                :key="seat.maSoGhe"
+                class="btn btn-outline-primary m-1"
+                :class="{ 'btn-primary': selectedSeat === seat.maSoGhe }"
+                @click="selectSeat(seat.maSoGhe)"
+              >
+                {{ seat.maSoGhe }}
+              </button>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+            <button
+              type="button"
+              class="btn btn-success"
+              :disabled="!selectedSeat"
+              @click="confirmBooking"
+            >
+              Xác nhận đặt vé
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </DefaultLayout>
 </template>
 
@@ -87,48 +130,97 @@ import { ref } from 'vue';
 import DefaultLayout from '../layouts/DefaultLayout.vue';
 import { useChuyenXeStore } from '../stores/chuyenXe';
 import { useTuyenXeStore } from '../stores/tuyenXe';
+import { useAuthStore } from '../stores/auth';
 import { useToast } from 'vue-toastification';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
+import * as bootstrap from 'bootstrap';
 
 const store = useChuyenXeStore();
 const tuyenXeStore = useTuyenXeStore();
+const authStore = useAuthStore();
 const toast = useToast();
 const router = useRouter();
 const searchForm = ref({ diemDi: '', diemDen: '', ngayKhoiHanh: '' });
 const tuyenXes = ref([]);
+const availableSeats = ref([]);
+const selectedSeat = ref(null);
+const selectedTrip = ref(null);
+const loadingSeats = ref(false);
 
 tuyenXeStore.fetchTuyenXes().then(() => {
-  tuyenXes.value = tuyenXeStore.tuyenXes;
+    tuyenXes.value = tuyenXeStore.tuyenXes;
 });
 
 const searchTrips = async () => {
-  try {
-    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/chuyenxe`, {
-      params: {
-        diemDi: searchForm.value.diemDi,
-        diemDen: searchForm.value.diemDen,
-        ngayKhoiHanh: searchForm.value.ngayKhoiHanh,
-      },
-    });
-    store.chuyenXes = response.data.data;
-  } catch (error) {
-    toast.error(error.response?.data?.error || 'Lỗi khi tìm kiếm chuyến xe');
-  }
+    try {
+        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/chuyenxe`, {
+            params: {
+                diemDi: searchForm.value.diemDi,
+                diemDen: searchForm.value.diemDen,
+                ngayKhoiHanh: searchForm.value.ngayKhoiHanh,
+            },
+            headers: {
+                Authorization: `Bearer ${authStore.token}`, // Add if authentication is required
+            },
+        });
+        store.chuyenXes = response.data.data;
+    } catch (error) {
+        toast.error(error.response?.data?.error || 'Lỗi khi tìm kiếm chuyến xe');
+    }
 };
 
-const bookTicket = async (chuyenXeId) => {
-  try {
-    const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/vexe`, {
-      chuyenXeId,
-      khachHangId: authStore.user.khachHangId, // Assumes user has linked khachHangId
-      soGhe: 'A1', // Example seat, implement seat selection later
-    });
-    toast.success('Đặt vé thành công!');
-    router.push('/customer/ticket-history');
-  } catch (error) {
-    toast.error(error.response?.data?.error || 'Lỗi khi đặt vé');
-  }
+const openSeatSelection = async (chuyenXe) => {
+    selectedTrip.value = chuyenXe;
+    loadingSeats.value = true;
+    try {
+        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/vexe/${chuyenXe._id}/seats`, {
+            headers: {
+                Authorization: `Bearer ${authStore.token}`, // Add if authentication is required
+            },
+        });
+        availableSeats.value = response.data.availableSeats;
+        loadingSeats.value = false;
+        selectedSeat.value = null;
+        const modal = new bootstrap.Modal(document.getElementById('seatModal'));
+        modal.show();
+    } catch (error) {
+        loadingSeats.value = false;
+        toast.error(error.response?.data?.error || 'Lỗi khi tải danh sách ghế');
+    }
+};
+
+const selectSeat = (seat) => {
+    selectedSeat.value = seat;
+};
+
+const confirmBooking = async () => {
+    if (!authStore.user?.khachHangId) {
+        toast.error('Tài khoản của bạn chưa được liên kết với thông tin khách hàng. Vui lòng liên hệ hỗ trợ.');
+        return;
+    }
+    try {
+        const response = await axios.post(
+            `${import.meta.env.VITE_API_BASE_URL}/vexe/book`,
+            {
+                chuyenXeId: selectedTrip.value._id,
+                maSoGhe: selectedSeat.value,
+                khachHangId: authStore.user.khachHangId,
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${authStore.token}`, // Add if authentication is required
+                },
+            }
+        );
+        toast.success('Đặt vé thành công!');
+        const modal = bootstrap.Modal.getInstance(document.getElementById('seatModal'));
+        modal.hide();
+        router.push('/customer/ticket-history');
+    } catch (error) {
+        console.error('Booking error:', error.response?.data);
+        toast.error(error.response?.data?.error || 'Lỗi khi đặt vé');
+    }
 };
 </script>
 

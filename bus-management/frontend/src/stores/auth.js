@@ -12,28 +12,30 @@ export const useAuthStore = defineStore('auth', {
   }),
   getters: {
     isAuthenticated: (state) => !!state.token,
-    role: (state) => state.user?.role, // Getter for user role
+    role: (state) => state.user?.role,
   },
   actions: {
     async register(credentials) {
       try {
         const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/register`, credentials);
         toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
-        return response.data; // Contains the newly created user
+        return response.data;
       } catch (error) {
+        console.error('Register error:', error.response?.data); // Debug log
         toast.error(error.response?.data?.errors?.[0]?.msg || error.response?.data?.error || 'Đăng ký thất bại');
         throw error;
       }
     },
-    async login(credentials) {
+    async login({ username, password }) {
       try {
-        const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/login`, credentials);
-        this.user = response.data.user; // Ensure user contains role
+        const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/login`, { username, password });
+        this.user = response.data.user;
         this.token = response.data.token;
         localStorage.setItem('token', this.token);
         axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
         toast.success('Đăng nhập thành công!');
       } catch (error) {
+        console.error('Login error:', error.response?.data); // Debug log
         toast.error(error.response?.data?.error || 'Đăng nhập thất bại');
         throw error;
       }

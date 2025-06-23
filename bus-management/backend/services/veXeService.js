@@ -1,4 +1,5 @@
-const { VeXe, NhanVien, ChuyenXe, KhachHang, Xe, KhuyenMai } = require('../models');
+const mongoose = require('mongoose');
+const { VeXe, NhanVien, ChuyenXe, KhachHang, Xe, SoGheSoGiuong, KhuyenMai } = require('../models');
 
 const getAllVeXe = async ({ page = 1, limit = 10 }) => {
   const skip = (page - 1) * limit;
@@ -79,9 +80,90 @@ const deleteVeXe = async (id) => {
   return { message: 'Xóa vé xe thành công' };
 };
 
+const bookVeXeService = async ({ chuyenXeId, maSoGhe, khachHangId, khuyenMaiId }) => {
+  try {
+    // Validate customer
+    const khachHang = await KhachHang.findById(khachHangId);
+    if (!khachHang) throw new Error('Khách hàng không tồn tại');
+
+    // Validate trip
+    const chuyenXe = await ChuyenXe.findById(chuyenXeId).populate('xeId');
+    if (!chuyenXe) throw new Error('Chuyến xe không tồn tại');
+    if (!['Pending', 'Running'].includes(chuyenXe.trangThaiChuyen)) {
+      throw new Error('Chuyến xe không khả dụng để đặt vé');
+    }
+
+    // Validate seat
+    const soGhe = await SoGheSoGiuong.findOne({
+      maSoGhe,
+      xeId: chuyenXe.xeId,
+      trangThai: 'Available',
+    });
+    if (!soGhe) throw new Error('Ghế không tồn tại hoặc đã được đặt');
+
+    // Calculate total price with promotion (if any)
+    let tongTien = chuyenXe.gia;
+    if (khuyenMaiId) {
+      const khuyenMai = await KhuyenMai.findById(khuyenMaiId);
+      if (!khuyenMai) throw new Error('Khuyến mãi không tồn tại');
+      tongTien = tongTien * (1 - (khuyenMai.discount || 0));
+    }
+
+    // Update seat status
+    soGhe.trangThai = 'Booked';
+    await soGhe.save();
+
+    // Create ticket
+    const veXe = new VeXe({
+      nhanVienId: null,
+      chuyenXeId,
+      khachHangId,
+      maSoGhe,
+      xeId: chuyenXe.xeId,
+      ngayDatVe: new Date(),
+      khuyenMaiId: khuyenMaiId || null,
+      tongTien,
+      trangThai: 'Booked',
+    });
+    await veXe.save();
+
+    // Create ticket history
+    const lichSuVeXe = new LichSuVeXe({
+      veXeId: veXe._id,
+      trangThai: 'Booked',
+      ngayThayDoi: new Date(),
+      ghiChu: 'Vé được đặt bởi khách hàng',
+    });
+    await lichSuVeXe.save();
+
+    return veXe;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+  
+};
+const getAvailableSeats = async (chuyenXeId) => {
+    try {
+        const chuyenXe = await ChuyenXe.findById(chuyenXeId).populate('xeId');
+        if (!chuyenXe) throw new Error('Chuyến xe không tồn tại');
+
+        const availableSeats = await SoGheSoGiuong.find({
+            xeId: chuyenXe.xeId._id,
+            trangThai: 'Available',
+        }).select('maSoGhe');
+
+        return availableSeats;
+    } catch (error) {
+        throw new Error(error.message);
+    }
+};
+
+
 module.exports = {
   getAllVeXe,
   createVeXe,
   updateVeXe,
   deleteVeXe,
+  bookVeXeService,
+  getAvailableSeats, // Thêm service mới
 };

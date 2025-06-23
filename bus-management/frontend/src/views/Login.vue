@@ -198,14 +198,12 @@ const cardRef = ref(null);
 const triggerShake = () => {
   if (cardRef.value) {
     cardRef.value.classList.remove('shake');
-    // Force reflow to restart animation
     void cardRef.value.offsetWidth;
     cardRef.value.classList.add('shake');
   }
 };
 
 const generateCaptcha = () => {
-  // Sinh chuỗi random
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let text = '';
   for (let i = 0; i < 5; i++) {
@@ -213,15 +211,12 @@ const generateCaptcha = () => {
   }
   captchaText.value = text;
 
-  // Vẽ lên canvas
   const canvas = captchaCanvas.value;
   if (canvas) {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // Nền
     ctx.fillStyle = '#f3f3f3';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    // Chữ
     for (let i = 0; i < text.length; i++) {
       ctx.font = `${24 + Math.random() * 8}px Arial`;
       ctx.fillStyle = `rgb(${50 + Math.random()*150},${50 + Math.random()*150},${50 + Math.random()*150})`;
@@ -231,7 +226,6 @@ const generateCaptcha = () => {
       ctx.fillText(text[i], 0, 0);
       ctx.restore();
     }
-    // Nhiễu
     for (let i = 0; i < 8; i++) {
       ctx.strokeStyle = `rgba(0,0,0,${Math.random()*0.3})`;
       ctx.beginPath();
@@ -256,7 +250,11 @@ const login = async () => {
   }
   loading.value = true;
   try {
-    await authStore.login(form.value);
+    // Only send username and password
+    await authStore.login({
+      username: form.value.username,
+      password: form.value.password,
+    });
     const userRole = authStore.user?.role?.toLowerCase();
     if (userRole === 'customer') {
       router.push('/customer/dashboard');
@@ -268,8 +266,15 @@ const login = async () => {
       triggerShake();
     }
   } catch (error) {
-    console.error('Login error:', error);
-    toast.error(error.response?.data?.error || 'Đăng nhập thất bại');
+    console.error('Login error:', error.response?.data);
+    const errorMsg = error.response?.data?.error;
+    if (errorMsg === 'Tên người dùng không tồn tại') {
+      toast.error('Tên người dùng không tồn tại!');
+    } else if (errorMsg === 'Mật khẩu không đúng') {
+      toast.error('Mật khẩu không đúng!');
+    } else {
+      toast.error(errorMsg || 'Đăng nhập thất bại!');
+    }
     triggerShake();
   } finally {
     loading.value = false;

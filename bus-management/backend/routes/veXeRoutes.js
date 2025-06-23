@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, param } = require('express-validator');
-const { getVeXe, postVeXe, putVeXe, deleteVeXe } = require('../controllers/veXeController');
+const { getVeXe, postVeXe, putVeXe, deleteVeXe, bookVeXe } = require('../controllers/veXeController'); // Add bookVeXe
 const authMiddleware = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -45,6 +45,24 @@ router.delete(
   ],
   authMiddleware(['Admin', 'Staff']),
   deleteVeXe
+);
+router.post(
+  '/book',
+  [
+    body('chuyenXeId').isMongoId().withMessage('ID chuyến xe không hợp lệ'),
+    body('maSoGhe').notEmpty().withMessage('Mã số ghế là bắt buộc'),
+    body('khuyenMaiId').optional().isMongoId().withMessage('ID khuyến mãi không hợp lệ'),
+  ],
+  authMiddleware(['Customer']),
+  bookVeXe
+);
+router.get(
+    '/:chuyenXeId/seats',
+    [
+        param('chuyenXeId').isMongoId().withMessage('ID chuyến xe không hợp lệ'),
+    ],
+    authMiddleware(['Customer']),
+    getAvailableSeats
 );
 
 module.exports = router;

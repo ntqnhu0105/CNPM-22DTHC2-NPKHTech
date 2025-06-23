@@ -10,6 +10,20 @@ router.post(
     body('username').notEmpty().withMessage('Tên người dùng là bắt buộc'),
     body('password').isLength({ min: 6 }).withMessage('Mật khẩu phải có ít nhất 6 ký tự'),
     body('role').isIn(['Admin', 'Staff', 'Customer']).withMessage('Vai trò không hợp lệ'),
+    body().custom((value, { req }) => {
+      if (req.body.role === 'Customer') {
+        if (!req.body.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(req.body.email)) {
+          throw new Error('Email không hợp lệ');
+        }
+        if (!req.body.hoVaTen) {
+          throw new Error('Họ và tên là bắt buộc');
+        }
+        if (!req.body.sdt || !/^[0-9]{10,11}$/.test(req.body.sdt)) {
+          throw new Error('SĐT phải có 10 hoặc 11 chữ số');
+        }
+      }
+      return true;
+    }),
   ],
   registerUser
 );

@@ -19,7 +19,7 @@ import CSKHView from '../views/CSKHView.vue';
 import LichSuVeXeView from '../views/LichSuVeXeView.vue';
 import CustomerDashboard from '../views/CustomerDashboard.vue';
 import { useAuthStore } from '../stores/auth';
-
+import TicketHistory from '../views/TicketHistory.vue';
 const routes = [
   { path: '/login', name: 'Login', component: Login },
   { path: '/register', name: 'Register', component: Register },
@@ -124,6 +124,12 @@ const routes = [
     name: 'CustomerDashboard',
     component: CustomerDashboard,
     meta: { requiresAuth: true, roles: ['Customer'] },
+  },
+  {
+    path: '/customer/ticket-history',
+    name: 'TicketHistory',
+    component: TicketHistory,
+    meta: { requiresAuth: true, role: 'Customer' },
   },
   { path: '/', redirect: '/login' },
 ];

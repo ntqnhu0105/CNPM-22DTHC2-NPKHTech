@@ -15,6 +15,7 @@ const KhachHangSchema = new Schema({
       message: 'SĐT phải có 10 hoặc 11 chữ số.'
     }
   }
+  
 });
 
 module.exports = mongoose.model('KhachHang', KhachHangSchema);

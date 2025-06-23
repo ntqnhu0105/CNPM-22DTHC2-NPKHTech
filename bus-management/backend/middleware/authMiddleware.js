@@ -8,7 +8,11 @@ const authMiddleware = (roles = []) => {
     }
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = decoded;
+      req.user = {
+        userId: decoded.userId,
+        role: decoded.role,
+        khachHangId: decoded.khachHangId,
+      };
       if (roles.length && !roles.includes(decoded.role)) {
         return res.status(403).json({ error: 'Không có quyền truy cập' });
       }

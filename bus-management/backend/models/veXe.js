@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const VeXeSchema = new Schema({
-  nhanVienId: { type: Schema.Types.ObjectId, ref: 'NhanVien', required: true },
+  nhanVienId: { type: Schema.Types.ObjectId, ref: 'NhanVien', default: null },
   chuyenXeId: { type: Schema.Types.ObjectId, ref: 'ChuyenXe', required: true },
   khachHangId: { type: Schema.Types.ObjectId, ref: 'KhachHang', required: true },
   maSoGhe: { type: String, required: true, maxlength: 10 },
