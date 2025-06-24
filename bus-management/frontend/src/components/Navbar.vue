@@ -171,17 +171,46 @@
           </div>
           
           <!-- Customer Dashboard -->
-          <div v-if="authStore.isAuthenticated && ['Customer'].includes(authStore.user.role)" class="nav-item">
+          <div v-if="authStore.isAuthenticated && ['Customer'].includes(authStore.user.role)" class="nav-item customer-dashboard-with-bell">
             <router-link to="/customer/dashboard" class="nav-link">
               <i class="fas fa-tachometer-alt"></i>
               <span>Tổng quan thông tin</span>
             </router-link>
+            <!-- Notification bell for Customer (moved here) -->
+            <div class="notification-bell-wrapper">
+              <div class="notification-bell" @click="toggleNotifications">
+                <i class="fas fa-bell"></i>
+                <span v-if="unreadCount > 0" class="notification-badge">{{ unreadCount }}</span>
+              </div>
+              <div v-if="showNotifications" class="notification-dropdown notification-3d">
+                <div class="notification-header">
+                  <span>Thông báo</span>
+                  <button v-if="unreadCount > 0" class="mark-all-btn" @click="confirmMarkAllRead">Đọc tất cả</button>
+                </div>
+                <div v-if="thongBaoStore.loading" class="notification-loading">Đang tải...</div>
+                <div v-else-if="thongBaoStore.thongBaos.length === 0" class="notification-empty">Không có thông báo.</div>
+                <ul v-else class="notification-list">
+                  <li v-for="tb in thongBaoStore.thongBaos" :key="tb._id" class="notification-item" :class="{ 'unread': tb.trangThai === 'Sent', 'important': tb.isImportant }">
+                    <div class="notification-actions">
+                      <span class="star-icon" :class="{ active: tb.isImportant }" @click.stop="confirmToggleImportant(tb)"><i class="fas fa-star"></i></span>
+                      <span v-if="tb.trangThai === 'Sent'" class="mark-read-icon" @click.stop="confirmMarkAsRead(tb)"><i class="fas fa-envelope-open"></i></span>
+                    </div>
+                    <div class="notification-title clickable" @click="openDetail(tb)">{{ tb.tieuDe }}</div>
+                    <div class="notification-content">{{ tb.noiDung }}</div>
+                    <div class="notification-date">{{ formatDate(tb.ngayGui) }}</div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- End notification bell -->
           </div>
         </div>
       </div>
       
       <!-- User actions -->
       <div class="user-actions">
+        <!-- Notification bell for Customer -->
+        <!-- (đã di chuyển lên cạnh tổng quan thông tin) -->
         <div v-if="authStore.isAuthenticated" class="user-info">
           <div class="user-avatar">
             <i class="fas fa-user-circle"></i>
@@ -215,18 +244,77 @@
       </button>
     </div>
   </nav>
+  <!-- Modal chi tiết thông báo -->
+  <div class="modal fade" id="notificationDetailModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content notification-modal-3d">
+        <div class="modal-header">
+          <h5 class="modal-title text-gradient">Chi tiết thông báo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div v-if="selectedThongBao">
+            <div class="mb-2 d-flex align-items-center">
+              <span class="star-icon me-2" :class="{ active: selectedThongBao.isImportant }" @click="confirmToggleImportant(selectedThongBao)"><i class="fas fa-star"></i></span>
+              <span class="badge bg-info me-2" v-if="selectedThongBao.trangThai === 'Sent'">Chưa đọc</span>
+              <span class="badge bg-success me-2" v-else>Đã đọc</span>
+            </div>
+            <h5 class="mb-2">{{ selectedThongBao.tieuDe }}</h5>
+            <div class="mb-2">{{ selectedThongBao.noiDung }}</div>
+            <div class="text-muted mb-2">Gửi lúc: {{ formatDate(selectedThongBao.ngayGui) }}</div>
+            <button v-if="selectedThongBao.trangThai === 'Sent'" class="btn btn-primary btn-sm me-2" @click="confirmMarkAsRead(selectedThongBao)">Đánh dấu đã đọc</button>
+            <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
+import { useThongBaoStore } from '../stores/thongBao';
 import { useRouter } from 'vue-router';
+import { Modal } from 'bootstrap';
 
 const authStore = useAuthStore();
+const thongBaoStore = useThongBaoStore();
 const router = useRouter();
 const isMenuOpen = ref(false);
 const activeDropdown = ref(null);
 const dropdownTimeout = ref(null);
+
+const showNotifications = ref(false);
+const selectedThongBao = ref(null);
+
+const toggleNotifications = () => {
+  showNotifications.value = !showNotifications.value;
+  if (showNotifications.value && authStore.user && authStore.user._id) {
+    thongBaoStore.fetchThongBaos(1, authStore.user._id);
+  }
+};
+
+const unreadCount = computed(() =>
+  thongBaoStore.thongBaos.filter(tb => tb.trangThai === 'Sent').length
+);
+
+const formatDate = (dateStr) => {
+  const d = new Date(dateStr);
+  return d.toLocaleString('vi-VN');
+};
+
+watch(() => authStore.user, (newUser) => {
+  if (newUser && newUser.role === 'Customer') {
+    thongBaoStore.fetchThongBaos(1, newUser._id);
+  }
+});
+
+onMounted(() => {
+  if (authStore.isAuthenticated && authStore.user.role === 'Customer') {
+    thongBaoStore.fetchThongBaos(1, authStore.user._id);
+  }
+});
 
 const logout = () => {
   authStore.logout();
@@ -255,6 +343,38 @@ const closeDropdown = (dropdownName) => {
     }
     dropdownTimeout.value = null;
   }, 250);
+};
+
+const markAsRead = async (id) => {
+  await thongBaoStore.markAsRead(id);
+};
+const markAllRead = async () => {
+  await thongBaoStore.markAllAsRead(authStore.user._id);
+};
+const toggleImportant = async (id) => {
+  await thongBaoStore.toggleImportant(id);
+};
+
+const openDetail = (tb) => {
+  selectedThongBao.value = tb;
+  const modal = new Modal(document.getElementById('notificationDetailModal'));
+  modal.show();
+};
+
+const confirmMarkAsRead = (tb) => {
+  if (window.confirm('Bạn muốn đánh dấu thông báo này là đã đọc?')) {
+    markAsRead(tb._id);
+  }
+};
+const confirmMarkAllRead = () => {
+  if (window.confirm('Bạn muốn đánh dấu tất cả thông báo là đã đọc?')) {
+    markAllRead();
+  }
+};
+const confirmToggleImportant = (tb) => {
+  if (window.confirm(tb.isImportant ? 'Bỏ đánh dấu quan trọng cho thông báo này?' : 'Đánh dấu thông báo này là quan trọng?')) {
+    toggleImportant(tb._id);
+  }
 };
 </script>
 
@@ -830,5 +950,182 @@ const closeDropdown = (dropdownName) => {
 /* Hide default dropdown arrow if any (for button.dropdown-toggle) */
 .dropdown-toggle::after {
   display: none !important;
+}
+
+.notification-bell-wrapper {
+  position: relative;
+  margin-right: 1.5rem;
+  display: flex;
+  align-items: center;
+}
+.notification-bell {
+  position: relative;
+  cursor: pointer;
+  font-size: 1.5rem;
+  color: #60a5fa;
+  transition: color 0.2s;
+}
+.notification-bell:hover {
+  color: #fff;
+}
+.notification-badge {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 50%;
+  padding: 2px 7px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+}
+.notification-dropdown {
+  position: absolute;
+  right: 0;
+  top: 36px;
+  min-width: 320px;
+  background: linear-gradient(135deg, #1e293b 90%, #334155 100%);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.25);
+  z-index: 9999;
+  padding: 0.5rem 0;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.notification-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.notification-item {
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  color: #e0e7ef;
+  font-size: 0.97rem;
+  transition: background 0.2s;
+}
+.notification-item:last-child {
+  border-bottom: none;
+}
+.notification-item.unread {
+  background: rgba(96, 165, 250, 0.08);
+  font-weight: 600;
+}
+.notification-title {
+  font-weight: 600;
+  color: #60a5fa;
+  margin-bottom: 2px;
+}
+.notification-content {
+  font-size: 0.95rem;
+  color: #e0e7ef;
+}
+.notification-date {
+  font-size: 0.82rem;
+  color: #a0aec0;
+  margin-top: 2px;
+}
+.notification-loading, .notification-empty {
+  padding: 1rem;
+  text-align: center;
+  color: #a0aec0;
+  font-size: 0.98rem;
+}
+.customer-dashboard-with-bell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.notification-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem 0.3rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  font-weight: 600;
+  color: #60a5fa;
+  font-size: 1.08rem;
+}
+.mark-all-btn {
+  background: #60a5fa;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.2rem 0.8rem;
+  font-size: 0.92rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.mark-all-btn:hover {
+  background: #2563eb;
+}
+.notification-item {
+  position: relative;
+  padding-left: 2.2rem;
+}
+.notification-item.important {
+  border-left: 4px solid #facc15;
+  background: rgba(250, 204, 21, 0.08);
+}
+.notification-actions {
+  position: absolute;
+  left: 0.5rem;
+  top: 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.star-icon {
+  color: #a0aec0;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.star-icon.active {
+  color: #facc15;
+}
+.star-icon:hover {
+  color: #facc15;
+}
+.mark-read-icon {
+  color: #60a5fa;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.mark-read-icon:hover {
+  color: #2563eb;
+}
+.notification-3d {
+  box-shadow: 0 12px 40px rgba(99,102,241,0.25), 0 2px 8px rgba(30,41,59,0.18);
+  transform: perspective(800px) rotateX(6deg) scale(1.03);
+  transition: box-shadow 0.3s, transform 0.3s;
+}
+.notification-3d:active, .notification-3d:focus-within {
+  box-shadow: 0 16px 60px rgba(99,102,241,0.32), 0 4px 16px rgba(30,41,59,0.22);
+  transform: perspective(800px) rotateX(0deg) scale(1.04);
+}
+.notification-modal-3d {
+  box-shadow: 0 16px 60px rgba(99,102,241,0.32), 0 4px 16px rgba(30,41,59,0.22);
+  border-radius: 1.2rem;
+  background: #232946;
+  border: 1.5px solid #363b53;
+  color: #dde6ed;
+  font-family: 'Inter', sans-serif;
+  animation: modal3dIn 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+@keyframes modal3dIn {
+  0% { opacity: 0; transform: perspective(800px) rotateY(30deg) scale(0.8); }
+  100% { opacity: 1; transform: perspective(800px) rotateY(0deg) scale(1); }
+}
+.clickable {
+  cursor: pointer;
+  text-decoration: underline;
+  color: #60a5fa;
+}
+.clickable:hover {
+  color: #fff;
 }
 </style>

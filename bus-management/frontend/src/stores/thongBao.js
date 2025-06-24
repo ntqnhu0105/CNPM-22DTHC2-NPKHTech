@@ -16,10 +16,12 @@ export const useThongBaoStore = defineStore('thongBao', {
   }),
 
   actions: {
-    async fetchThongBaos(page = 1) {
+    async fetchThongBaos(page = 1, khachHangId = null) {
       this.loading = true;
       try {
-        const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/thongbao?page=${page}&limit=${this.pagination.limit}`);
+        let url = `${import.meta.env.VITE_API_BASE_URL}/thongbao?page=${page}&limit=${this.pagination.limit}`;
+        if (khachHangId) url += `&khachHangId=${khachHangId}`;
+        const response = await axios.get(url);
         this.thongBaos = response.data.data;
         this.pagination = response.data.pagination;
       } catch (error) {
@@ -69,6 +71,36 @@ export const useThongBaoStore = defineStore('thongBao', {
         return response.data;
       } catch (error) {
         toast.error('Lỗi khi lấy thông tin thông báo');
+        throw error;
+      }
+    },
+
+    async markAsRead(id) {
+      try {
+        await axios.patch(`${import.meta.env.VITE_API_BASE_URL}/thongbao/${id}/read`);
+        this.fetchThongBaos(this.pagination.page);
+      } catch (error) {
+        toast.error('Lỗi khi đánh dấu đã đọc');
+        throw error;
+      }
+    },
+
+    async markAllAsRead(khachHangId) {
+      try {
+        await axios.patch(`${import.meta.env.VITE_API_BASE_URL}/thongbao/read-all`, { khachHangId });
+        this.fetchThongBaos(this.pagination.page, khachHangId);
+      } catch (error) {
+        toast.error('Lỗi khi đánh dấu tất cả đã đọc');
+        throw error;
+      }
+    },
+
+    async toggleImportant(id) {
+      try {
+        await axios.patch(`${import.meta.env.VITE_API_BASE_URL}/thongbao/${id}/important`);
+        this.fetchThongBaos(this.pagination.page);
+      } catch (error) {
+        toast.error('Lỗi khi cập nhật quan trọng');
         throw error;
       }
     }

@@ -10,6 +10,10 @@ const ThongBaoSchema = new Schema({
     type: String,
     default: 'Sent',
     enum: ['Sent', 'Read']
+  },
+  isImportant: {
+    type: Boolean,
+    default: false
   }
 });
 

@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, param } = require('express-validator');
-const { getThongBao, postThongBao, putThongBao, deleteThongBao } = require('../controllers/thongBaoController');
+const { getThongBao, postThongBao, putThongBao, deleteThongBao, markThongBaoAsRead, markAllThongBaoAsRead, toggleThongBaoImportant } = require('../controllers/thongBaoController');
 const authMiddleware = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -38,6 +38,27 @@ router.delete(
   ],
   authMiddleware(['Admin', 'Staff']),
   deleteThongBao
+);
+
+router.patch(
+  '/:id/read',
+  [param('id').isMongoId().withMessage('ID thông báo không hợp lệ')],
+  authMiddleware(['Customer']),
+  markThongBaoAsRead
+);
+
+router.patch(
+  '/read-all',
+  [body('khachHangId').isMongoId().withMessage('ID khách hàng không hợp lệ')],
+  authMiddleware(['Customer']),
+  markAllThongBaoAsRead
+);
+
+router.patch(
+  '/:id/important',
+  [param('id').isMongoId().withMessage('ID thông báo không hợp lệ')],
+  authMiddleware(['Customer']),
+  toggleThongBaoImportant
 );
 
 module.exports = router;

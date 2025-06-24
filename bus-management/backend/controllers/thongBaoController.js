@@ -1,10 +1,10 @@
-const { getAllThongBao, createThongBao, updateThongBao, deleteThongBao: deleteThongBaoService } = require('../services/thongBaoService');
+const { getAllThongBao, createThongBao, updateThongBao, deleteThongBao: deleteThongBaoService, markAsRead, markAllAsRead, toggleImportant } = require('../services/thongBaoService');
 const { validationResult } = require('express-validator');
 
 const getThongBao = async (req, res, next) => {
   try {
-    const { page, limit } = req.query;
-    const result = await getAllThongBao({ page: parseInt(page), limit: parseInt(limit) });
+    const { page, limit, khachHangId } = req.query;
+    const result = await getAllThongBao({ page: parseInt(page), limit: parseInt(limit), khachHangId });
     res.json({
       data: result.thongBaos,
       pagination: { total: result.total, page: result.page, limit: result.limit },
@@ -53,9 +53,40 @@ const deleteThongBao = async (req, res, next) => {
   }
 };
 
+const markThongBaoAsRead = async (req, res, next) => {
+  try {
+    const thongBao = await markAsRead(req.params.id);
+    res.json({ data: thongBao, message: 'Đã đánh dấu đã đọc' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const markAllThongBaoAsRead = async (req, res, next) => {
+  try {
+    const { khachHangId } = req.body;
+    const result = await markAllAsRead(khachHangId);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const toggleThongBaoImportant = async (req, res, next) => {
+  try {
+    const thongBao = await toggleImportant(req.params.id);
+    res.json({ data: thongBao, message: 'Cập nhật trạng thái quan trọng thành công' });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getThongBao,
   postThongBao,
   putThongBao,
   deleteThongBao,
+  markThongBaoAsRead,
+  markAllThongBaoAsRead,
+  toggleThongBaoImportant,
 };
