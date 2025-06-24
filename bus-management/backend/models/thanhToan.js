@@ -9,7 +9,14 @@ const ThanhToanSchema = new Schema({
   soTien: { type: Number, required: true },
   trangThai: { type: String, required: true, maxlength: 20 },
   thoiGianGiaoDich: { type: Date, required: true },
-  paymentGatewayId: { type: String, maxlength: 50 }
+  paymentGatewayId: { type: String, maxlength: 50 },
+  diaChiDon: { type: String, maxlength: 200 },
+  diaChiTra: { type: String, maxlength: 200 },
+  thongTinKhachHang: {
+    hoVaTen: String,
+    soDienThoai: String,
+    email: String
+  }
 });
 
 ThanhToanSchema.index({ khachHangId: 1 });

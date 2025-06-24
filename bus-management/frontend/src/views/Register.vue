@@ -166,7 +166,7 @@
             
             <div class="form-options">
               <label class="checkbox-wrapper">
-                <input type="checkbox" class="checkbox-input" required>
+                <input type="checkbox" v-model="agreeToTerms" class="checkbox-input" required>
                 <span class="checkbox-custom"></span>
                 <span class="checkbox-label">
                   Tôi đồng ý với 
@@ -178,13 +178,14 @@
             </div>
             
             <button 
-              type="submit" 
+              type="button" 
               class="register-button" 
-              :disabled="loading"
+              :disabled="!agreeToTerms || loading"
               :class="{ 'loading': loading }"
+              @click="showCustomerInfoModal"
             >
               <span class="button-content">
-                <span v-if="!loading">Đăng ký</span>
+                <span v-if="!loading">Tiếp tục đăng ký</span>
                 <span v-else class="loading-text">Đang tạo tài khoản...</span>
               </span>
               <div class="button-background"></div>
@@ -206,6 +207,103 @@
         </div>
       </div>
     </div>
+
+    <!-- Customer Info Modal -->
+    <div class="modal fade" id="customerInfoModal" tabindex="-1" aria-labelledby="customerInfoModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="customerInfoModalLabel">
+              <i class="fas fa-user-plus me-2"></i>
+              Thông tin khách hàng
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p class="text-muted mb-4">
+              <i class="fas fa-info-circle me-2"></i>
+              Vui lòng cung cấp thông tin cá nhân để hoàn tất đăng ký tài khoản
+            </p>
+            
+            <form @submit.prevent="register" class="customer-info-form">
+              <div class="mb-3">
+                <label class="form-label">
+                  <i class="fas fa-id-card me-2"></i>CCCD <span class="text-danger">*</span>
+                </label>
+                <input 
+                  v-model="form.cccd" 
+                  type="text" 
+                  class="form-control" 
+                  placeholder="Nhập CCCD (12 số)"
+                  required 
+                  maxlength="12"
+                  pattern="[0-9]{12}"
+                />
+                <div class="form-text">CCCD phải có đúng 12 chữ số</div>
+              </div>
+              
+              <div class="mb-3">
+                <label class="form-label">
+                  <i class="fas fa-envelope me-2"></i>Email <span class="text-danger">*</span>
+                </label>
+                <input 
+                  v-model="form.email" 
+                  type="email" 
+                  class="form-control" 
+                  placeholder="Nhập email của bạn"
+                  required 
+                />
+              </div>
+              
+              <div class="mb-3">
+                <label class="form-label">
+                  <i class="fas fa-user me-2"></i>Họ và tên <span class="text-danger">*</span>
+                </label>
+                <input 
+                  v-model="form.hoVaTen" 
+                  type="text" 
+                  class="form-control" 
+                  placeholder="Nhập họ và tên đầy đủ"
+                  required 
+                  maxlength="50"
+                />
+              </div>
+              
+              <div class="mb-3">
+                <label class="form-label">
+                  <i class="fas fa-phone me-2"></i>Số điện thoại <span class="text-danger">*</span>
+                </label>
+                <input 
+                  v-model="form.sdt" 
+                  type="text" 
+                  class="form-control" 
+                  placeholder="Nhập số điện thoại (10-11 số)"
+                  required 
+                  maxlength="11"
+                  pattern="[0-9]{10,11}"
+                />
+                <div class="form-text">Số điện thoại phải có 10 hoặc 11 chữ số</div>
+              </div>
+              
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                  <i class="fas fa-times me-2"></i>Hủy
+                </button>
+                <button 
+                  type="submit" 
+                  class="btn btn-primary" 
+                  :disabled="loading"
+                >
+                  <i class="fas fa-check me-2"></i>
+                  <span v-if="!loading">Hoàn tất đăng ký</span>
+                  <span v-else>Đang xử lý...</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -213,6 +311,7 @@
 import { ref, computed } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
+import { Modal } from 'bootstrap';
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -220,9 +319,14 @@ const form = ref({
   username: '',
   password: '',
   role: 'Customer',
+  cccd: '',
+  email: '',
+  hoVaTen: '',
+  sdt: '',
 });
 const loading = ref(false);
 const showPassword = ref(false);
+const agreeToTerms = ref(false);
 
 // Password strength calculation
 const passwordStrength = computed(() => {
@@ -252,10 +356,36 @@ const togglePassword = () => {
   showPassword.value = !showPassword.value;
 };
 
+const showCustomerInfoModal = () => {
+  if (!agreeToTerms.value) {
+    return;
+  }
+  
+  // Validate basic form fields
+  if (!form.value.username || !form.value.password) {
+    alert('Vui lòng điền đầy đủ tên người dùng và mật khẩu');
+    return;
+  }
+  
+  const modal = new Modal(document.getElementById('customerInfoModal'));
+  modal.show();
+};
+
 const register = async () => {
+  // Validate customer info
+  if (!form.value.cccd || !form.value.email || !form.value.hoVaTen || !form.value.sdt) {
+    alert('Vui lòng điền đầy đủ thông tin khách hàng');
+    return;
+  }
+  
   loading.value = true;
   try {
     await authStore.register(form.value);
+    
+    // Close modal
+    const modal = Modal.getInstance(document.getElementById('customerInfoModal'));
+    modal.hide();
+    
     router.push('/login');
   } catch (error) {
     // Error is handled in authStore via toast
@@ -1113,6 +1243,134 @@ const register = async () => {
   
   .benefit-icon {
     align-self: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-dialog {
+    margin-top: 6vh !important;
+  }
+}
+
+/* Customer Info Modal Styles */
+#customerInfoModal .modal-content {
+  border-radius: 1.2rem;
+  border: none;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+
+#customerInfoModal .modal-header {
+  background: rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1.2rem 1.2rem 0 0;
+  padding: 1.5rem;
+}
+
+#customerInfoModal .modal-title {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+#customerInfoModal .btn-close {
+  filter: invert(1);
+  opacity: 0.8;
+}
+
+#customerInfoModal .modal-body {
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+#customerInfoModal .form-label {
+  color: #fff;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+#customerInfoModal .form-control {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0.8rem;
+  color: #fff;
+  padding: 0.8rem 1rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+#customerInfoModal .form-control:focus {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+#customerInfoModal .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+#customerInfoModal .form-text {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  margin-top: 0.3rem;
+}
+
+#customerInfoModal .modal-footer {
+  background: rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0 0 1.2rem 1.2rem;
+  padding: 1.5rem;
+}
+
+#customerInfoModal .btn {
+  border-radius: 0.8rem;
+  padding: 0.8rem 1.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+#customerInfoModal .btn-secondary {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+#customerInfoModal .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+#customerInfoModal .btn-primary {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  border: none;
+  color: #fff;
+}
+
+#customerInfoModal .btn-primary:hover {
+  background: linear-gradient(45deg, #5a6fd8, #6a4190);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+#customerInfoModal .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  #customerInfoModal .modal-dialog {
+    margin: 1rem;
+  }
+  
+  #customerInfoModal .modal-body {
+    padding: 1.5rem;
+  }
+  
+  #customerInfoModal .modal-footer {
+    padding: 1rem 1.5rem;
   }
 }
 </style>

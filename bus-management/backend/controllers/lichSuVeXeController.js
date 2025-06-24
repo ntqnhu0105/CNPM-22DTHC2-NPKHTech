@@ -1,5 +1,6 @@
 const { getAllLichSuVeXe, createLichSuVeXe, updateLichSuVeXe, deleteLichSuVeXe: deleteLichSuVeXeService } = require('../services/lichSuVeXeService');
 const { validationResult } = require('express-validator');
+const { VeXe, LichSuVeXe } = require('../models');
 
 const getLichSuVeXe = async (req, res, next) => {
   try {
@@ -53,9 +54,23 @@ const deleteLichSuVeXe = async (req, res, next) => {
   }
 };
 
+const getLichSuVeXeByCustomer = async (req, res, next) => {
+  try {
+    const khachHangId = req.user.khachHangId;
+    if (!khachHangId) return res.status(400).json({ error: 'Không tìm thấy thông tin khách hàng' });
+    const veXes = await VeXe.find({ khachHangId }).select('_id');
+    const veXeIds = veXes.map(v => v._id);
+    const lichSu = await LichSuVeXe.find({ veXeId: { $in: veXeIds } }).sort({ ngayThayDoi: -1 });
+    res.json({ data: lichSu });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getLichSuVeXe,
   postLichSuVeXe,
   putLichSuVeXe,
   deleteLichSuVeXe,
+  getLichSuVeXeByCustomer,
 };

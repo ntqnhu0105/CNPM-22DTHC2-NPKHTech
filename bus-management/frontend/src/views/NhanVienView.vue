@@ -15,35 +15,13 @@
     </section>
     <section class="xe-content-card">
       <NhanVienList @edit="openEditModal" />
-      <!-- Create Modal -->
-      <div class="modal fade" id="createModal" tabindex="-1">
-        <div class="modal-dialog">
-          <div class="modal-content xe-modal-content">
-            <div class="modal-header xe-modal-header">
-              <h5 class="modal-title xe-modal-title">Tạo nhân viên</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" @click="resetForm"></button>
-            </div>
-            <div class="modal-body xe-modal-body">
-              <NhanVienForm :modal-id="'createModal'" @saved="refreshList" />
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- Edit Modal -->
-      <div class="modal fade" id="editModal" tabindex="-1">
-        <div class="modal-dialog">
-          <div class="modal-content xe-modal-content">
-            <div class="modal-header xe-modal-header">
-              <h5 class="modal-title xe-modal-title">Sửa nhân viên</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" @click="resetForm"></button>
-            </div>
-            <div class="modal-body xe-modal-body">
-              <NhanVienForm :modal-id="'editModal'" :nhan-vien="selectedNhanVien" @saved="refreshList" />
-            </div>
-          </div>
-        </div>
-      </div>
     </section>
+    
+    <!-- Create Modal -->
+    <NhanVienForm :modal-id="'createModal'" @saved="refreshList" />
+    
+    <!-- Edit Modal -->
+    <NhanVienForm :modal-id="'editModal'" :nhan-vien="selectedNhanVien" @saved="refreshList" />
   </DefaultLayout>
 </template>
 
@@ -69,10 +47,6 @@ const openEditModal = (nhanVien) => {
 
 const refreshList = () => {
   store.fetchNhanViens();
-  selectedNhanVien.value = null;
-};
-
-const resetForm = () => {
   selectedNhanVien.value = null;
 };
 </script>
@@ -119,7 +93,7 @@ body {
   margin: 0;
 }
 .xe-btn {
-  Display: flex;
+  display: flex;
   align-items: center;
   gap: 0.5rem;
   background: #1A202C;
@@ -132,7 +106,7 @@ body {
   transition: background 0.2s, box-shadow 0.2s, border-color 0.2s;
 }
 .xe-btn:hover {
-  Background: #0000004f;
+  background: #0000004f;
   border-color: #6b6b6b;
 }
 .xe-content-card {

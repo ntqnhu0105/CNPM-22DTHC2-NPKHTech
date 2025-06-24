@@ -3,8 +3,16 @@ const { validationResult } = require('express-validator');
 
 const getChuyenXe = async (req, res, next) => {
   try {
-    const { page, limit } = req.query;
-    const result = await getAllChuyenXe({ page: parseInt(page), limit: parseInt(limit) });
+    const { page, limit, diemDi, diemDen, ngayKhoiHanh } = req.query;
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const result = await getAllChuyenXe({
+      page: isNaN(pageNum) ? 1 : pageNum,
+      limit: isNaN(limitNum) ? 10 : limitNum,
+      diemDi,
+      diemDen,
+      ngayKhoiHanh,
+    });
     res.json({
       data: result.chuyenXes,
       pagination: { total: result.total, page: result.page, limit: result.limit },

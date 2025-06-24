@@ -163,10 +163,10 @@
                 <i class="fas fa-headset"></i>
                 <span>Chăm sóc khách hàng</span>
               </router-link>
-              <router-link to="/lichsuvex" class="dropdown-item">
+              <!-- <router-link to="/lichsuvex" class="dropdown-item">
                 <i class="fas fa-history"></i>
                 <span>Lịch sử vé xe</span>
-              </router-link>
+              </router-link> -->
             </div>
           </div>
           
@@ -174,7 +174,7 @@
           <div v-if="authStore.isAuthenticated && ['Customer'].includes(authStore.user.role)" class="nav-item">
             <router-link to="/customer/dashboard" class="nav-link">
               <i class="fas fa-tachometer-alt"></i>
-              <span>Dashboard</span>
+              <span>Tổng quan thông tin</span>
             </router-link>
           </div>
         </div>

@@ -9,6 +9,10 @@
         <div class="modal-body">
           <form @submit.prevent="submitForm">
             <div class="mb-3">
+              <label class="form-label">CCCD</label>
+              <input v-model="form.cccd" type="text" class="form-input" required maxlength="12" pattern="[0-9]{12}" />
+            </div>
+            <div class="mb-3">
               <label class="form-label">Email</label>
               <input v-model="form.email" type="email" class="form-input" required maxlength="50" />
             </div>
@@ -19,6 +23,14 @@
             <div class="mb-3">
               <label class="form-label">Số điện thoại</label>
               <input v-model="form.sdt" type="text" class="form-input" required maxlength="11" pattern="[0-9]{10,11}" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Địa chỉ</label>
+              <input v-model="form.diaChi" type="text" class="form-input" maxlength="100" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Ngày sinh</label>
+              <input v-model="form.ngaySinh" type="date" class="form-input" />
             </div>
             <div class="text-end">
               <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Hủy</button>
@@ -48,6 +60,9 @@ const form = ref({
   email: '',
   hoVaTen: '',
   sdt: '',
+  cccd: '',
+  diaChi: '',
+  ngaySinh: '',
 });
 
 watch(
@@ -58,6 +73,19 @@ watch(
         email: newKhachHang.email,
         hoVaTen: newKhachHang.hoVaTen,
         sdt: newKhachHang.sdt,
+        cccd: newKhachHang.cccd,
+        diaChi: newKhachHang.diaChi,
+        ngaySinh: newKhachHang.ngaySinh ? new Date(newKhachHang.ngaySinh).toISOString().split('T')[0] : '',
+      };
+    } else {
+      // Reset form khi không có khachHang (tạo mới)
+      form.value = {
+        email: '',
+        hoVaTen: '',
+        sdt: '',
+        cccd: '',
+        diaChi: '',
+        ngaySinh: '',
       };
     }
   },

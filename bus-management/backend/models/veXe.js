@@ -13,7 +13,15 @@ const VeXeSchema = new Schema({
   trangThai: {
     type: String,
     default: 'Booked',
-    enum: ['Booked', 'Paid', 'Cancelled', 'Refunded']
+    enum: ['Booked', 'Paid', 'Cancelled', 'Refunded', 'Deleted']
+  },
+  phuongThucThanhToan: { type: String, maxlength: 50 },
+  diaChiDon: { type: String, maxlength: 200 },
+  diaChiTra: { type: String, maxlength: 200 },
+  thongTinKhachHang: {
+    hoVaTen: String,
+    soDienThoai: String,
+    email: String
   }
 });
 

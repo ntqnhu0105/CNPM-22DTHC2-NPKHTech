@@ -12,6 +12,9 @@ router.post(
     body('role').isIn(['Admin', 'Staff', 'Customer']).withMessage('Vai trò không hợp lệ'),
     body().custom((value, { req }) => {
       if (req.body.role === 'Customer') {
+        if (!req.body.cccd || !/^[0-9]{12}$/.test(req.body.cccd)) {
+          throw new Error('CCCD phải có đúng 12 chữ số');
+        }
         if (!req.body.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(req.body.email)) {
           throw new Error('Email không hợp lệ');
         }
@@ -20,6 +23,12 @@ router.post(
         }
         if (!req.body.sdt || !/^[0-9]{10,11}$/.test(req.body.sdt)) {
           throw new Error('SĐT phải có 10 hoặc 11 chữ số');
+        }
+        if (req.body.diaChi && req.body.diaChi.length > 100) {
+          throw new Error('Địa chỉ tối đa 100 ký tự');
+        }
+        if (req.body.ngaySinh && !Date.parse(req.body.ngaySinh)) {
+          throw new Error('Ngày sinh không hợp lệ');
         }
       }
       return true;

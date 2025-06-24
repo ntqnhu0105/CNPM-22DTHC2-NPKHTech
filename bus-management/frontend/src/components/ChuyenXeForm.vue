@@ -36,7 +36,7 @@
               <label class="form-label">Thời gian khởi hành</label>
               <input v-model="form.thoiGianKhoiHanh" type="datetime-local" class="form-input" required />
             </div>
-            <div class="mb-3" v-if="isEdit">
+            <div class="mb-3">
               <label class="form-label">Trạng thái</label>
               <select v-model="form.trangThaiChuyen" class="form-input">
                 <option v-for="status in ['Pending', 'Running', 'Completed', 'Cancelled']" :key="status" :value="status">
@@ -53,7 +53,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useChuyenXeStore } from '../stores/chuyenXe';
 import { useToast } from 'vue-toastification';
 import axios from 'axios';
@@ -67,7 +67,10 @@ const emit = defineEmits(['saved']);
 
 const store = useChuyenXeStore();
 const toast = useToast();
-const isEdit = !!props.chuyenXe?._id;
+
+// Tính toán isEdit dựa trên prop chuyenXe
+const isEdit = ref(false);
+
 const form = ref({
   tuyenXeId: '',
   xeId: '',
@@ -76,26 +79,61 @@ const form = ref({
   thoiGianKhoiHanh: '',
   trangThaiChuyen: 'Pending',
 });
+
 const tuyenXes = ref([]);
 const xes = ref([]);
 const taiXes = ref([]);
 
+// Reset form về trạng thái ban đầu
+const resetForm = () => {
+  form.value = {
+    tuyenXeId: '',
+    xeId: '',
+    taiXeId: '',
+    gia: 0,
+    thoiGianKhoiHanh: '',
+    trangThaiChuyen: 'Pending',
+  };
+  isEdit.value = false;
+};
+
+// Watch prop chuyenXe để cập nhật form
 watch(
   () => props.chuyenXe,
   (newChuyenXe) => {
-    if (newChuyenXe) {
+    console.log('ChuyenXeForm - chuyenXe prop changed:', newChuyenXe);
+    
+    if (newChuyenXe && newChuyenXe._id) {
+      // Chế độ sửa
+      isEdit.value = true;
       form.value = {
-        tuyenXeId: newChuyenXe.tuyenXeId._id,
-        xeId: newChuyenXe.xeId._id,
-        taiXeId: newChuyenXe.taiXeId._id,
+        tuyenXeId: newChuyenXe.tuyenXeId._id || newChuyenXe.tuyenXeId,
+        xeId: newChuyenXe.xeId._id || newChuyenXe.xeId,
+        taiXeId: newChuyenXe.taiXeId._id || newChuyenXe.taiXeId,
         gia: newChuyenXe.gia,
         thoiGianKhoiHanh: new Date(newChuyenXe.thoiGianKhoiHanh).toISOString().slice(0, 16),
-        trangThaiChuyen: newChuyenXe.trangThaiChuyen,
+        trangThaiChuyen: newChuyenXe.trangThaiChuyen || 'Pending',
       };
+      console.log('ChuyenXeForm - Edit mode, form data:', form.value);
+    } else {
+      // Chế độ tạo mới
+      resetForm();
+      console.log('ChuyenXeForm - Create mode, form reset');
     }
   },
   { immediate: true }
 );
+
+// Lắng nghe sự kiện đóng modal để reset form
+onMounted(() => {
+  const modalElement = document.getElementById(props.modalId);
+  if (modalElement) {
+    modalElement.addEventListener('hidden.bs.modal', () => {
+      console.log('ChuyenXeForm - Modal closed, resetting form');
+      resetForm();
+    });
+  }
+});
 
 const fetchData = async () => {
   try {
@@ -114,15 +152,21 @@ const fetchData = async () => {
 
 const submitForm = async () => {
   try {
-    if (isEdit) {
+    console.log('ChuyenXeForm - Submitting form:', { isEdit: isEdit.value, formData: form.value });
+    
+    if (isEdit.value) {
       await store.updateChuyenXe(props.chuyenXe._id, form.value);
+      toast.success('Cập nhật chuyến xe thành công!');
     } else {
       await store.createChuyenXe(form.value);
+      toast.success('Tạo chuyến xe thành công!');
     }
+    
     const modal = Modal.getInstance(document.getElementById(props.modalId));
     modal.hide();
     emit('saved');
   } catch (error) {
+    console.error('ChuyenXeForm - Submit error:', error);
     // Error is handled in store
   }
 };

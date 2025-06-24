@@ -20,6 +20,7 @@ const tuyenXeRoutes = require('./routes/tuyenXeRoutes');
 const userRoutes = require('./routes/userRoutes');
 const veXeRoutes = require('./routes/veXeRoutes');
 const xeRoutes = require('./routes/xeRoutes');
+const captchaRoutes = require('./routes/captchaRoutes');
 const errorMiddleware = require('./middleware/errorMiddleware');
 
 // Tải biến môi trường
@@ -52,6 +53,7 @@ app.use('/api/tuyenxe', tuyenXeRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/vexe', veXeRoutes);
 app.use('/api/xe', xeRoutes);
+app.use('/api/captcha', captchaRoutes);
 
 // Middleware xử lý lỗi
 app.use(errorMiddleware);

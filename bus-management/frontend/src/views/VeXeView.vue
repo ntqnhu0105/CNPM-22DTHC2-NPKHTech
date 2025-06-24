@@ -67,35 +67,13 @@
           </ul>
         </nav>
       </div>
-      <!-- Create Modal -->
-      <div class="modal fade" id="createModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-          <div class="modal-content xe-modal-content">
-            <div class="modal-header xe-modal-header">
-              <h5 class="modal-title xe-modal-title">Tạo vé xe</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" @click="resetForm"></button>
-            </div>
-            <div class="modal-body xe-modal-body">
-              <VeXeForm :modal-id="'createModal'" @saved="refreshList" />
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- Edit Modal -->
-      <div class="modal fade" id="editModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-          <div class="modal-content xe-modal-content">
-            <div class="modal-header xe-modal-header">
-              <h5 class="modal-title xe-modal-title">Sửa vé xe</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" @click="resetForm"></button>
-            </div>
-            <div class="modal-body xe-modal-body">
-              <VeXeForm :modal-id="'editModal'" :ve-xe="selectedVeXe" @saved="refreshList" />
-            </div>
-          </div>
-        </div>
-      </div>
     </section>
+    
+    <!-- Create Modal -->
+    <VeXeForm :modal-id="'createModal'" @saved="refreshList" />
+    
+    <!-- Edit Modal -->
+    <VeXeForm :modal-id="'editModal'" :ve-xe="selectedVeXe" @saved="refreshList" />
   </DefaultLayout>
 </template>
 
@@ -118,12 +96,18 @@ const openEditModal = (veXe) => {
   }
 };
 
-const refreshList = () => {
-  store.fetchVeXes();
-  selectedVeXe.value = null;
+const confirmDelete = async (id) => {
+  if (confirm('Bạn có chắc chắn muốn xóa vé xe này?')) {
+    try {
+      await store.deleteVeXe(id);
+    } catch (error) {
+      console.error('Error deleting ticket:', error);
+    }
+  }
 };
 
-const resetForm = () => {
+const refreshList = () => {
+  store.fetchVeXes();
   selectedVeXe.value = null;
 };
 
@@ -182,7 +166,7 @@ body {
   margin: 0;
 }
 .xe-btn {
-  Display: flex;
+  display: flex;
   align-items: center;
   gap: 0.5rem;
   background: #1A202C;
@@ -195,14 +179,13 @@ body {
   transition: background 0.2s, box-shadow 0.2s, border-color 0.2s;
 }
 .xe-btn:hover {
-  Background: #0000004f;
+  background: #0000004f;
   border-color: #6b6b6b;
 }
 .xe-content-card {
   background: #1A202C;
   border-radius: 1.2rem;
   padding: 2rem 1.5rem;
-
   min-height: 400px;
 }
 .xe-table {
@@ -280,25 +263,6 @@ body {
   background: #7f1d1d;
   color: #fee2e2;
 }
-.text-info-btn {
-  background: #1A202C;
-  color: #81e986;
-  border: 1px solid #055f2e;
-  font-weight: 600;
-  text-decoration: none;
-  margin-left: 0.2rem;
-  margin-right: 0.2rem;
-  padding: 0.6em 1.2em;
-  border-radius: 0.5rem;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
-  display: inline-flex;
-  align-items: center;
-}
-.text-info-btn:hover {
-  background: #003619;
-  color: #fff;
-  border-color: #09751b;
-}
 .xe-pagination .page-item .page-link {
   border-radius: 0.75rem !important;
   margin: 0 0.25em;
@@ -325,98 +289,11 @@ body {
   cursor: not-allowed;
   opacity: 0.6;
 }
-/* Modal Styling */
-.xe-modal-content {
-  padding: 0 !important;
-  border-radius: 1.2rem;
-  box-shadow: 0 8px 32px rgba(99,102,241,0.13);
-  background: #1A202C;
-  border: 1.5px solid #363b53;
-  color: #dde6ed;
-  font-family: 'Inter', sans-serif;
-}
-.xe-modal-header {
-  padding: 1.1rem 1.7rem 0.7rem 1.7rem !important;
-  background: #1A202C;
-  border-bottom: 1px solid #363b53;
-  border-top-left-radius: 1.2rem;
-  border-top-right-radius: 1.2rem;
-}
-.xe-modal-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #a5b4fc;
-  letter-spacing: -0.01em;
-}
-.btn-close {
-  filter: invert(1) grayscale(1);
-  opacity: 0.7;
-}
-.xe-modal-body {
-  padding: 1.2rem 1.7rem !important;
-  max-height: 70vh;
-  overflow-y: auto;
-}
-.xe-form-label {
-  color: #dde6ed;
-  font-weight: 500;
-  margin-bottom: 0.4rem;
-  font-size: 1rem;
-}
-.xe-form-input {
-  width: 100%;
-  padding: 0.7rem 1rem;
-  border-radius: 0.7rem;
-  border: 1.5px solid #363b53;
-  background: #1A202C;
-  color: #fff;
-  font-size: 1rem;
-  font-family: 'Inter', sans-serif;
-  margin-bottom: 1.1rem;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  box-shadow: 0 1px 4px rgba(99,102,241,0.07);
-}
-.xe-form-input:focus {
-  border-color: #6366f1;
-  box-shadow: 0 2px 8px rgba(99,102,241,0.13);
-}
-.xe-form-input::placeholder {
-  color: #9ca3af;
-  opacity: 1;
-}
-.xe-btn-submit {
-  width: 100%;
-  background: linear-gradient(90deg, #6366f1 0%, #60a5fa 100%);
-  color: #fff;
-  border: none;
-  border-radius: 0.7rem;
-  font-weight: 700;
-  font-size: 1.08rem;
-  padding: 0.8rem 0;
-  margin-top: 0.2rem;
-  box-shadow: 0 2px 8px rgba(99,102,241,0.10);
-  transition: background 0.2s, box-shadow 0.2s;
-}
-.xe-btn-submit:hover {
-  background: #4f46e5;
-  color: #fff;
-}
 @media (max-width: 768px) {
   .xe-header { flex-direction: column; align-items: flex-start; padding: 1.2rem 1rem; }
   .xe-header-left { gap: 0.7rem; }
   .xe-title { font-size: 1.3rem; }
   .xe-btn { width: 100%; justify-content: center; margin-top: 1rem; }
   .xe-content-card { padding: 1rem 0.5rem; }
-  .xe-modal-header, .xe-modal-body { padding: 0.7rem 0.7rem !important; }
-  .xe-modal-content { border-radius: 0.7rem; }
-}
-.modal-dialog {
-  margin-top: 15vh !important;
-}
-@media (max-width: 768px) {
-  .modal-dialog {
-    margin-top: 6vh !important;
-  }
 }
 </style> 

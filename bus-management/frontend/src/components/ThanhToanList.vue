@@ -31,7 +31,25 @@
         </thead>
         <tbody>
           <tr v-for="thanhToan in filteredThanhToans" :key="thanhToan._id" class="table-row-hover">
-            <td>{{ thanhToan.veXeId?.maSoGhe || 'N/A' }}</td>
+            <td>
+              <div><b>Mã ghế:</b> {{ thanhToan.veXeId?.maSoGhe || 'N/A' }}</div>
+              <div><b>Khách:</b> {{ thanhToan.veXeId?.khachHangId?.hoVaTen || 'N/A' }}</div>
+              <div>
+                <b>Chuyến:</b>
+                <template v-if="thanhToan.veXeId?.chuyenXeId?.tuyenXeId">
+                  {{ thanhToan.veXeId.chuyenXeId.tuyenXeId.diemDi }} - {{ thanhToan.veXeId.chuyenXeId.tuyenXeId.diemDen }}
+                </template>
+                <template v-else>-</template>
+              </div>
+              <div><b>Xe:</b> {{ thanhToan.veXeId?.xeId?.bienSoXe || 'N/A' }}</div>
+              <div>
+                <b>Khuyến mãi:</b>
+                <template v-if="thanhToan.veXeId?.khuyenMaiId">
+                  {{ thanhToan.veXeId.khuyenMaiId.tenKhuyenMai }} ({{ thanhToan.veXeId.khuyenMaiId.phanTramGiamGia }}%)
+                </template>
+                <template v-else>Không có</template>
+              </div>
+            </td>
             <td>{{ thanhToan.phuongThucThanhToan }}</td>
             <td class="price-cell">{{ thanhToan.soTien.toLocaleString('vi-VN') }} VNĐ</td>
             <td>

@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, param } = require('express-validator');
-const { getLichSuVeXe, postLichSuVeXe, putLichSuVeXe, deleteLichSuVeXe } = require('../controllers/lichSuVeXeController');
+const { getLichSuVeXe, postLichSuVeXe, putLichSuVeXe, deleteLichSuVeXe, getLichSuVeXeByCustomer } = require('../controllers/lichSuVeXeController');
 const authMiddleware = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -37,5 +37,6 @@ router.delete(
   authMiddleware(['Admin', 'Staff']),
   deleteLichSuVeXe
 );
+router.get('/customer', authMiddleware(['Customer']), getLichSuVeXeByCustomer);
 
 module.exports = router;

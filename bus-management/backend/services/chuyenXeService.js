@@ -1,15 +1,37 @@
 const { ChuyenXe, Xe, TaiXe, TuyenXe } = require('../models');
 
-const getAllChuyenXe = async ({ page = 1, limit = 10 }) => {
+const getAllChuyenXe = async ({ page = 1, limit = 10, diemDi, diemDen, ngayKhoiHanh }) => {
   const skip = (page - 1) * limit;
-  const chuyenXes = await ChuyenXe.find()
+  let chuyenXeQuery = ChuyenXe.find();
+
+  // Filter theo diemDi, diemDen
+  if (diemDi || diemDen) {
+    const tuyenFilter = {};
+    if (diemDi) tuyenFilter.diemDi = diemDi;
+    if (diemDen) tuyenFilter.diemDen = diemDen;
+    const tuyenXes = await TuyenXe.find(tuyenFilter).select('_id');
+    const tuyenXeIds = tuyenXes.map(tx => tx._id);
+    chuyenXeQuery = chuyenXeQuery.where('tuyenXeId').in(tuyenXeIds);
+  }
+
+  // Filter theo ngày khởi hành
+  if (ngayKhoiHanh) {
+    const start = new Date(ngayKhoiHanh);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(ngayKhoiHanh);
+    end.setHours(23, 59, 59, 999);
+    chuyenXeQuery = chuyenXeQuery.where('thoiGianKhoiHanh').gte(start).lte(end);
+  }
+
+  const chuyenXes = await chuyenXeQuery
     .populate('tuyenXeId', 'diemDi diemDen')
     .populate('xeId', 'bienSoXe')
     .populate('taiXeId', 'hoVaTen')
     .skip(skip)
     .limit(limit)
     .lean();
-  const total = await ChuyenXe.countDocuments();
+
+  const total = await chuyenXeQuery.clone().countDocuments();
   return { chuyenXes, total, page, limit };
 };
 
@@ -50,15 +72,19 @@ const updateChuyenXe = async (id, data) => {
     const taiXe = await TaiXe.findById(taiXeId);
     if (!taiXe) throw new Error('Tài xế không tồn tại');
   }
-  if (xeId && thoiGianKhoiHanh) {
+  // Chỉ kiểm tra trùng lịch nếu xeId hoặc thoiGianKhoiHanh thực sự thay đổi
+  const isXeChanged = xeId && xeId.toString() !== chuyenXe.xeId.toString();
+  const isTimeChanged = thoiGianKhoiHanh && (new Date(thoiGianKhoiHanh).getTime() !== new Date(chuyenXe.thoiGianKhoiHanh).getTime());
+  if (isXeChanged || isTimeChanged) {
+    const checkXeId = xeId || chuyenXe.xeId;
+    const checkTime = thoiGianKhoiHanh || chuyenXe.thoiGianKhoiHanh;
     const conflictingChuyenXe = await ChuyenXe.findOne({
       _id: { $ne: id },
-      xeId,
-      thoiGianKhoiHanh: { $gte: new Date(thoiGianKhoiHanh), $lte: new Date(thoiGianKhoiHanh).setHours(23, 59, 59) },
+      xeId: checkXeId,
+      thoiGianKhoiHanh: { $gte: new Date(checkTime).setHours(0,0,0,0), $lte: new Date(checkTime).setHours(23,59,59,999) },
     });
     if (conflictingChuyenXe) throw new Error('Xe đã được xếp lịch vào thời gian này');
   }
-
   Object.assign(chuyenXe, { tuyenXeId, xeId, taiXeId, gia, thoiGianKhoiHanh, trangThaiChuyen });
   return await chuyenXe.save();
 };

@@ -38,17 +38,35 @@ const store = useChuyenXeStore();
 const selectedChuyenXe = ref(null);
 
 const openEditModal = (chuyenXe) => {
-  selectedChuyenXe.value = chuyenXe;
-  const modalElement = document.getElementById('editModal');
-  if (modalElement) {
-    const modal = new Modal(modalElement);
-    modal.show();
+  console.log('ChuyenXeView - openEditModal called with:', chuyenXe);
+  
+  // Đảm bảo chuyenXe có đầy đủ thông tin
+  if (!chuyenXe || !chuyenXe._id) {
+    console.error('ChuyenXeView - Invalid chuyenXe data:', chuyenXe);
+    return;
   }
+  
+  // Set selectedChuyenXe trước khi mở modal
+  selectedChuyenXe.value = chuyenXe;
+  console.log('ChuyenXeView - selectedChuyenXe set to:', selectedChuyenXe.value);
+  
+  // Đợi một chút để Vue cập nhật DOM
+  setTimeout(() => {
+    const modalElement = document.getElementById('editModal');
+    if (modalElement) {
+      console.log('ChuyenXeView - Opening editModal');
+      const modal = new Modal(modalElement);
+      modal.show();
+    } else {
+      console.error('ChuyenXeView - editModal element not found');
+    }
+  }, 100);
 };
 
 const refreshList = () => {
   store.fetchChuyenXes();
   selectedChuyenXe.value = null;
+  console.log('ChuyenXeView - List refreshed, selectedChuyenXe reset');
 };
 </script>
 

@@ -52,7 +52,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useThanhToanStore } from '../stores/thanhToan';
 import { useToast } from 'vue-toastification';
 import axios from 'axios';
@@ -66,7 +66,7 @@ const emit = defineEmits(['saved']);
 
 const store = useThanhToanStore();
 const toast = useToast();
-const isEdit = !!props.thanhToan?._id;
+const isEdit = computed(() => !!props.thanhToan && !!props.thanhToan._id);
 const form = ref({
   veXeId: '',
   phuongThucThanhToan: '',
@@ -77,6 +77,13 @@ const form = ref({
 
 const veXes = ref([]);
 
+const mapTrangThai = (val) => {
+  if (val === 'Đang xử lý') return 'Pending';
+  if (val === 'Thành công') return 'Success';
+  if (val === 'Thất bại') return 'Failed';
+  return val;
+};
+
 watch(
   () => props.thanhToan,
   (newThanhToan) => {
@@ -85,8 +92,8 @@ watch(
         veXeId: newThanhToan.veXeId._id,
         phuongThucThanhToan: newThanhToan.phuongThucThanhToan,
         soTien: newThanhToan.soTien,
-        ngayThanhToan: new Date(newThanhToan.ngayThanhToan).toISOString().slice(0, 16),
-        trangThai: newThanhToan.trangThai,
+        ngayThanhToan: new Date(newThanhToan.thoiGianGiaoDich).toISOString().slice(0, 16),
+        trangThai: mapTrangThai(newThanhToan.trangThai),
       };
     }
   },
@@ -104,10 +111,16 @@ const fetchVeXes = async () => {
 
 const submitForm = async () => {
   try {
-    if (isEdit) {
-      await store.updateThanhToan(props.thanhToan._id, form.value);
+    const payload = {
+      ...form.value,
+      thoiGianGiaoDich: new Date(form.value.ngayThanhToan).toISOString(),
+    };
+    delete payload.ngayThanhToan;
+
+    if (isEdit.value) {
+      await store.updateThanhToan(props.thanhToan._id, payload);
     } else {
-      await store.createThanhToan(form.value);
+      await store.createThanhToan(payload);
     }
     const modal = Modal.getInstance(document.getElementById(props.modalId));
     modal.hide();

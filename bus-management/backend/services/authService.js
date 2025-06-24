@@ -2,11 +2,29 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { User, KhachHang } = require('../models');
 
-const register = async ({ username, password, role, hoVaTen, sdt, email }) => {
+const register = async ({ username, password, role, hoVaTen, sdt, email, cccd, diaChi, ngaySinh }) => {
   let khachHangId = null;
 
   if (role === 'Customer') {
-    const khachHang = new KhachHang({ email, hoVaTen, sdt });
+    // Validate required fields for customer
+    if (!cccd) throw new Error('CCCD là bắt buộc cho khách hàng');
+    if (!email) throw new Error('Email là bắt buộc cho khách hàng');
+    if (!hoVaTen) throw new Error('Họ và tên là bắt buộc cho khách hàng');
+    if (!sdt) throw new Error('Số điện thoại là bắt buộc cho khách hàng');
+
+    // Check if CCCD already exists
+    const existingKhachHang = await KhachHang.findOne({ cccd });
+    if (existingKhachHang) throw new Error('CCCD đã tồn tại');
+
+    // Create customer with all fields
+    const khachHang = new KhachHang({ 
+      cccd, 
+      email, 
+      hoVaTen, 
+      sdt, 
+      diaChi: diaChi || '', 
+      ngaySinh: ngaySinh ? new Date(ngaySinh) : null 
+    });
     await khachHang.save();
     khachHangId = khachHang._id;
   }

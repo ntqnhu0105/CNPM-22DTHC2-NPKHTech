@@ -7,7 +7,7 @@ const toast = useToast();
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: null,
+    user: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null,
     token: localStorage.getItem('token') || null,
   }),
   getters: {
@@ -32,6 +32,7 @@ export const useAuthStore = defineStore('auth', {
         this.user = response.data.user;
         this.token = response.data.token;
         localStorage.setItem('token', this.token);
+        localStorage.setItem('user', JSON.stringify(this.user));
         axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
         toast.success('Đăng nhập thành công!');
       } catch (error) {
@@ -44,6 +45,7 @@ export const useAuthStore = defineStore('auth', {
       this.user = null;
       this.token = null;
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       delete axios.defaults.headers.common['Authorization'];
       toast.info('Đã đăng xuất.');
     },
