@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { VeXe, NhanVien, ChuyenXe, KhachHang, Xe, SoGheSoGiuong, KhuyenMai, LichSuVeXe } = require('../models');
+const { VeXe, NhanVien, ChuyenXe, KhachHang, Xe, SoGheSoGiuong, KhuyenMai, LichSuVeXe, ThanhToan, ThongBao } = require('../models');
 
 const getAllVeXe = async ({ page = 1, limit = 10 }) => {
   const skip = (page - 1) * limit;
@@ -7,7 +7,8 @@ const getAllVeXe = async ({ page = 1, limit = 10 }) => {
     .populate('nhanVienId', 'hoVaTen')
     .populate({
       path: 'chuyenXeId',
-      populate: { path: 'tuyenXeId', select: 'diemDi diemDen' }
+      populate: { path: 'tuyenXeId', select: 'diemDi diemDen' },
+      select: 'thoiGianKhoiHanh gia'
     })
     .populate('khachHangId', 'hoVaTen')
     .populate('xeId', 'bienSoXe')
@@ -175,67 +176,72 @@ const deleteVeXe = async (id) => {
   return { message: 'Đã đánh dấu vé là Deleted' };
 };
 
-const bookVeXeService = async ({ chuyenXeId, maSoGhe, khachHangId, khuyenMaiId }) => {
+const bookVeXeService = async ({ chuyenXeId, danhSachGhe, khachHangId, khuyenMaiId }) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  
   try {
-    // Validate customer
-    const khachHang = await KhachHang.findById(khachHangId);
+    const khachHang = await KhachHang.findById(khachHangId).session(session);
     if (!khachHang) throw new Error('Khách hàng không tồn tại');
 
-    // Validate trip
-    const chuyenXe = await ChuyenXe.findById(chuyenXeId).populate('xeId');
+    const chuyenXe = await ChuyenXe.findById(chuyenXeId).populate('xeId').session(session);
     if (!chuyenXe) throw new Error('Chuyến xe không tồn tại');
-    if (!['Pending', 'Running'].includes(chuyenXe.trangThaiChuyen)) {
-      throw new Error('Chuyến xe không khả dụng để đặt vé');
-    }
 
-    // Validate seat
-    const soGhe = await SoGheSoGiuong.findOne({
-      maSoGhe,
-      xeId: chuyenXe.xeId,
-      trangThai: 'Available',
-    });
-    if (!soGhe) throw new Error('Ghế không tồn tại hoặc đã được đặt');
-
-    // Calculate total price with promotion (if any)
-    let tongTien = chuyenXe.gia;
+    let veXes = [];
+    let tongTienDonGia = chuyenXe.gia;
+    
     if (khuyenMaiId) {
-      const khuyenMai = await KhuyenMai.findById(khuyenMaiId);
-      if (!khuyenMai) throw new Error('Khuyến mãi không tồn tại');
-      tongTien = tongTien * (1 - (khuyenMai.discount || 0));
+      const khuyenMai = await KhuyenMai.findById(khuyenMaiId).session(session);
+      if (khuyenMai) tongTienDonGia = tongTienDonGia * (1 - (khuyenMai.phanTramGiamGia / 100));
     }
 
-    // Update seat status
-    soGhe.trangThai = 'Booked';
-    await soGhe.save();
+    for (const maSoGhe of danhSachGhe) {
+        // 1. Kiểm tra ghế trống
+        const soGhe = await SoGheSoGiuong.findOne({
+            maSoGhe,
+            xeId: chuyenXe.xeId._id,
+            trangThai: 'Available',
+        }).session(session);
 
-    // Create ticket
-    const veXe = new VeXe({
-      nhanVienId: null,
-      chuyenXeId,
-      khachHangId,
-      maSoGhe,
-      xeId: chuyenXe.xeId,
-      ngayDatVe: new Date(),
-      khuyenMaiId: khuyenMaiId || null,
-      tongTien,
-      trangThai: 'Booked',
-    });
-    await veXe.save();
+        if (!soGhe) throw new Error(`Ghế ${maSoGhe} đã bị người khác đặt hoặc không tồn tại`);
 
-    // Create ticket history
-    const lichSuVeXe = new LichSuVeXe({
-      veXeId: veXe._id,
-      trangThai: 'Booked',
-      ngayThayDoi: new Date(),
-      ghiChu: 'Vé được đặt bởi khách hàng',
-    });
-    await lichSuVeXe.save();
+        // 2. Cập nhật ghế
+        soGhe.trangThai = 'Booked';
+        await soGhe.save({ session });
 
-    return veXe;
+        // 3. Tạo vé
+        const veXe = new VeXe({
+            chuyenXeId,
+            khachHangId,
+            maSoGhe,
+            xeId: chuyenXe.xeId._id,
+            ngayDatVe: new Date(),
+            khuyenMaiId: khuyenMaiId || null,
+            tongTien: tongTienDonGia,
+            trangThai: 'Booked',
+        });
+        await veXe.save({ session });
+        veXes.push(veXe);
+
+        // 4. Lưu lịch sử
+        await new LichSuVeXe({
+            veXeId: veXe._id,
+            trangThai: 'Booked',
+            ngayThayDoi: new Date(),
+            ghiChu: 'Đặt vé thành công',
+        }).save({ session });
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+    
+    return veXes; // Trả về danh sách vé đã đặt
+
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     throw new Error(error.message);
   }
-  
 };
 const getAvailableSeats = async (chuyenXeId) => {
     try {
@@ -255,62 +261,137 @@ const getAvailableSeats = async (chuyenXeId) => {
 
 const payVeXe = async (veXeId, data, khachHangId) => {
   const { phuongThucThanhToan, diaChiDon, diaChiTra, thongTinKhachHang } = data;
-  const veXe = await VeXe.findById(veXeId);
-  if (!veXe) throw new Error('Vé xe không tồn tại');
-  if (veXe.khachHangId.toString() !== khachHangId.toString()) throw new Error('Không có quyền thanh toán vé này');
-  if (veXe.trangThai !== 'Booked') throw new Error('Vé không ở trạng thái chờ thanh toán');
+  
+  // Khởi tạo Transaction (Bảo vệ dữ liệu)
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  // Cập nhật thông tin vé
-  veXe.phuongThucThanhToan = phuongThucThanhToan;
-  veXe.diaChiDon = diaChiDon;
-  veXe.diaChiTra = diaChiTra;
-  veXe.thongTinKhachHang = thongTinKhachHang;
-  veXe.trangThai = 'Paid';
-  await veXe.save();
+  try {
+    // 1. Tìm vé (Kèm session)
+    const veXe = await VeXe.findById(veXeId).session(session);
+    if (!veXe) throw new Error('Vé xe không tồn tại');
+    
+    // 2. Validate quyền sở hữu
+    if (veXe.khachHangId.toString() !== khachHangId.toString()) {
+      throw new Error('Không có quyền thanh toán vé này');
+    }
 
-  // Lưu lịch sử vé
-  await new LichSuVeXe({
-    veXeId: veXe._id,
-    trangThai: 'Paid',
-    ngayThayDoi: new Date(),
-    ghiChu: 'Khách hàng đã thanh toán vé'
-  }).save();
+    // 3. Validate trạng thái
+    if (veXe.trangThai !== 'Booked') {
+      throw new Error('Vé không ở trạng thái chờ thanh toán (có thể đã hủy hoặc đã trả tiền)');
+    }
 
-  // Tạo bản ghi thanh toán
-  const chuyenXe = await ChuyenXe.findById(veXe.chuyenXeId);
-  const ThanhToan = require('../models/thanhToan');
-  await new ThanhToan({
-    khachHangId,
-    nhaXeId: chuyenXe.nhaXeId,
-    veXeId: veXe._id,
-    phuongThucThanhToan,
-    soTien: veXe.tongTien,
-    trangThai: 'Paid',
-    thoiGianGiaoDich: new Date(),
-    paymentGatewayId: '',
-    diaChiDon,
-    diaChiTra,
-    thongTinKhachHang
-  }).save();
+    // 4. CHECK TIMEOUT: Kiểm tra xem vé có quá hạn 10 phút không?
+    const now = new Date();
+    const bookingTime = new Date(veXe.ngayDatVe);
+    const diffMinutes = (now - bookingTime) / 60000; // Đổi ra phút
 
-  return veXe;
+    if (diffMinutes > 15) { // Cho phép giữ chỗ 15 phút
+        veXe.trangThai = 'Cancelled';
+        await veXe.save({ session });
+        
+        // Trả lại ghế
+        await SoGheSoGiuong.findOneAndUpdate(
+            { maSoGhe: veXe.maSoGhe, xeId: veXe.xeId },
+            { trangThai: 'Available' },
+            { session }
+        );
+        
+        await session.commitTransaction(); // Lưu việc hủy
+        throw new Error('Vé đã hết hạn giữ chỗ (quá 15 phút). Vui lòng đặt lại.');
+    }
+
+    // 5. Cập nhật thông tin vé
+    veXe.phuongThucThanhToan = phuongThucThanhToan;
+    veXe.diaChiDon = diaChiDon;
+    veXe.diaChiTra = diaChiTra;
+    veXe.thongTinKhachHang = thongTinKhachHang;
+    veXe.trangThai = 'Paid';
+    await veXe.save({ session });
+
+    // 6. Lưu lịch sử
+    await new LichSuVeXe({
+      veXeId: veXe._id,
+      trangThai: 'Paid',
+      ngayThayDoi: new Date(),
+      ghiChu: `Thanh toán thành công qua ${phuongThucThanhToan}`
+    }).save({ session });
+
+    // 7. Tạo bản ghi Thanh Toán
+    const chuyenXe = await ChuyenXe.findById(veXe.chuyenXeId).session(session);
+    
+    await new ThanhToan({
+      khachHangId,
+      nhaXeId: chuyenXe.nhaXeId,
+      veXeId: veXe._id,
+      phuongThucThanhToan,
+      soTien: veXe.tongTien,
+      trangThai: 'Success', // Đã trả tiền thì là Success luôn
+      thoiGianGiaoDich: new Date(),
+      diaChiDon,
+      diaChiTra,
+      thongTinKhachHang
+    }).save({ session });
+
+    await new ThongBao({
+        khachHangId,
+        tieuDe: 'Thanh toán thành công',
+        noiDung: `Bạn đã thanh toán thành công vé ${veXe.maSoGhe}. Chúc bạn thượng lộ bình an!`,
+        ngayGui: new Date(),
+        trangThai: 'Sent'
+    }).save({ session });
+
+    // Chốt giao dịch
+    await session.commitTransaction();
+    session.endSession();
+
+    return veXe;
+
+  } catch (error) {
+    // Nếu có lỗi bất kỳ -> Rollback toàn bộ (Không trừ tiền, không đổi trạng thái)
+    await session.abortTransaction();
+    session.endSession();
+    throw error; // Ném lỗi ra cho Controller bắt
+  }
 };
 
 const cancelVeXe = async (veXeId, khachHangId, lyDoHuy) => {
   const veXe = await VeXe.findById(veXeId);
   if (!veXe) throw new Error('Vé xe không tồn tại');
   if (veXe.khachHangId.toString() !== khachHangId.toString()) throw new Error('Không có quyền hủy vé này');
+  
   if (!['Booked', 'Paid'].includes(veXe.trangThai)) throw new Error('Vé không thể hủy ở trạng thái hiện tại');
+
+  const chuyenXe = await ChuyenXe.findById(veXe.chuyenXeId);
+  if (chuyenXe) {
+    const now = new Date();
+    const gioKhoiHanh = new Date(chuyenXe.thoiGianKhoiHanh);
+    
+    const diffHours = (gioKhoiHanh - now) / (1000 * 60 * 60);
+
+    // Nếu còn dưới 24h thì không cho hủy
+    if (diffHours < 24) {
+      throw new Error('Chỉ được hủy vé trước giờ khởi hành ít nhất 24 tiếng.');
+    }
+  }
+
+  const soGhe = await SoGheSoGiuong.findOne({ 
+      maSoGhe: veXe.maSoGhe, 
+      xeId: veXe.xeId 
+  });
+  if (soGhe) {
+      soGhe.trangThai = 'Available'; // Trả lại ghế trống
+      await soGhe.save();
+  }
 
   veXe.trangThai = 'Cancelled';
   await veXe.save();
 
-  // Lưu lịch sử vé
   await new LichSuVeXe({
     veXeId: veXe._id,
     trangThai: 'Cancelled',
     ngayThayDoi: new Date(),
-    ghiChu: lyDoHuy || 'Khách hàng hủy vé'
+    ghiChu: lyDoHuy || 'Khách hàng hủy vé (đúng quy định)'
   }).save();
 
   return veXe;

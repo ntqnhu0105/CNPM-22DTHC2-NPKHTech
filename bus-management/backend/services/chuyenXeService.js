@@ -7,10 +7,17 @@ const getAllChuyenXe = async ({ page = 1, limit = 10, diemDi, diemDen, ngayKhoiH
   // Filter theo diemDi, diemDen
   if (diemDi || diemDen) {
     const tuyenFilter = {};
-    if (diemDi) tuyenFilter.diemDi = diemDi;
-    if (diemDen) tuyenFilter.diemDen = diemDen;
+    
+    if (diemDi) tuyenFilter.diemDi = { $regex: diemDi, $options: 'i' };
+    if (diemDen) tuyenFilter.diemDen = { $regex: diemDen, $options: 'i' };
+    
     const tuyenXes = await TuyenXe.find(tuyenFilter).select('_id');
     const tuyenXeIds = tuyenXes.map(tx => tx._id);
+    
+    if (tuyenXeIds.length === 0) {
+        return { chuyenXes: [], total: 0, page, limit };
+    }
+
     chuyenXeQuery = chuyenXeQuery.where('tuyenXeId').in(tuyenXeIds);
   }
 

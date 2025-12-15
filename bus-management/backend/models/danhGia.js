@@ -12,7 +12,7 @@ const DanhGiaSchema = new Schema({
     max: 5
   },
   comment: { type: String, maxlength: 500, trim: true },
-  ngayDanhGia: { type: Date, required: true }
+  ngayDanhGia: { type: Date, default: Date.now }
 }, { timestamps: true });
 
 DanhGiaSchema.index({ nhaXeId: 1 });

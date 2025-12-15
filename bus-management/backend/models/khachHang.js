@@ -18,6 +18,7 @@ const KhachHangSchema = new Schema({
     type: String, 
     required: true, 
     maxlength: 50,
+    unique: true,
     validate: {
       validator: function(v) {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
@@ -34,6 +35,7 @@ const KhachHangSchema = new Schema({
     type: String,
     required: true,
     maxlength: 11,
+    unique: true,
     validate: {
       validator: function(v) {
         return /^[0-9]{10,11}$/.test(v);
@@ -52,9 +54,5 @@ const KhachHangSchema = new Schema({
   timestamps: true
 });
 
-// Index để tối ưu truy vấn
-KhachHangSchema.index({ cccd: 1 });
-KhachHangSchema.index({ email: 1 });
-KhachHangSchema.index({ sdt: 1 });
 
 module.exports = mongoose.model('KhachHang', KhachHangSchema);

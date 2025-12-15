@@ -1,9 +1,8 @@
 const express = require('express');
 const { body } = require('express-validator');
-const { registerUser, loginUser } = require('../controllers/authController');
-
+const { registerUser, loginUser, changePasswordController, forgotPasswordController, resetPasswordController } = require('../controllers/authController');
 const router = express.Router();
-
+const authMiddleware = require('../middleware/authMiddleware');
 router.post(
   '/register',
   [
@@ -44,6 +43,34 @@ router.post(
     body('password').notEmpty().withMessage('Mật khẩu là bắt buộc'),
   ],
   loginUser
+);
+
+router.put(
+  '/change-password',
+  [
+    body('oldPassword').notEmpty().withMessage('Mật khẩu cũ là bắt buộc'),
+    body('newPassword').isLength({ min: 6 }).withMessage('Mật khẩu mới phải có ít nhất 6 ký tự'),
+  ],
+  authMiddleware(['Customer', 'Staff', 'Admin']), 
+  changePasswordController
+);
+
+// 2. Quên mật khẩu
+router.post(
+  '/forgot-password',
+  [body('email').isEmail().withMessage('Email không hợp lệ')],
+  forgotPasswordController
+);
+
+// 3. Đặt lại mật khẩu bằng OTP 
+router.post(
+  '/reset-password',
+  [
+    body('email').isEmail().withMessage('Email không hợp lệ'),
+    body('otp').isLength({ min: 6, max: 6 }).withMessage('Mã OTP phải có 6 số'),
+    body('newPassword').isLength({ min: 6 }).withMessage('Mật khẩu mới phải có ít nhất 6 ký tự'),
+  ],
+  resetPasswordController
 );
 
 module.exports = router;

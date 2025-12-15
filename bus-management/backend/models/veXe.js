@@ -28,7 +28,7 @@ const VeXeSchema = new Schema({
 VeXeSchema.index({ nhanVienId: 1 });
 VeXeSchema.index({ chuyenXeId: 1 });
 VeXeSchema.index({ khachHangId: 1 });
-VeXeSchema.index({ maSoGhe: 1, xeId: 1 });
+VeXeSchema.index({ chuyenXeId: 1, maSoGhe: 1 });
 VeXeSchema.index({ ngayDatVe: 1 });
 
 module.exports = mongoose.model('VeXe', VeXeSchema);

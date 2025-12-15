@@ -77,10 +77,8 @@ const NhanVienSchema = new Schema({
 
 // Indexes để tối ưu truy vấn
 NhanVienSchema.index({ nhaXeId: 1 });
-NhanVienSchema.index({ cccd: 1 });
 NhanVienSchema.index({ email: 1 });
 NhanVienSchema.index({ sdt: 1 });
 NhanVienSchema.index({ chucVu: 1 });
-NhanVienSchema.index({ userId: 1 });
 
 module.exports = mongoose.model('NhanVien', NhanVienSchema);

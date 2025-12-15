@@ -109,19 +109,27 @@
             </div>
             
             <!-- Captcha group start -->
-            <div class="form-group captcha-group">
-              <canvas ref="captchaCanvas" width="130" height="32" class="captcha-canvas"></canvas>
-              <button type="button" class="refresh-captcha" @click="generateCaptcha" title="Tải lại captcha">
-                <i class="fas fa-sync-alt"></i>
-              </button>
-              <input
-                v-model="form.captchaInput"
-                type="text"
-                class="form-input captcha-input"
-                placeholder="Nhập mã xác nhận..."
-                required
-                autocomplete="off"
-              />
+            <div v-if="isCaptchaRequired" class="form-group captcha-group">
+              <div class="captcha-container">
+                <div class="captcha-box" v-html="captchaImage"></div>
+                
+                <button type="button" class="refresh-btn" @click="fetchCaptcha" title="Đổi mã khác">
+                  <i class="fas fa-sync-alt" :class="{ 'fa-spin': captchaLoading }"></i>
+                </button>
+              </div>
+
+              <div class="input-wrapper mt-2">
+                <div class="input-icon-container">
+                  <i class="fas fa-shield-alt input-icon"></i>
+                </div>
+                <input 
+                  v-model="form.captchaInput" 
+                  type="text" 
+                  class="form-input" 
+                  placeholder="Nhập mã xác nhận..." 
+                  autocomplete="off"
+                />
+              </div>
             </div>
             <!-- Captcha group end -->
             
@@ -180,20 +188,30 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
+import axios from 'axios'; 
 
 const authStore = useAuthStore();
 const router = useRouter();
 const toast = useToast();
-const captchaText = ref('');
-const captchaCanvas = ref(null);
-const form = ref({ username: '', password: '', captchaInput: '' });
+
+const form = ref({ 
+  username: '', 
+  password: '', 
+  captchaInput: ''
+});
+
 const loading = ref(false);
 const showPassword = ref(false);
 const cardRef = ref(null);
+
+const isCaptchaRequired = ref(false); 
+const captchaImage = ref('');         
+const captchaToken = ref('');         
+const captchaLoading = ref(false);
 
 const triggerShake = () => {
   if (cardRef.value) {
@@ -203,58 +221,42 @@ const triggerShake = () => {
   }
 };
 
-const generateCaptcha = () => {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let text = '';
-  for (let i = 0; i < 5; i++) {
-    text += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  captchaText.value = text;
-
-  const canvas = captchaCanvas.value;
-  if (canvas) {
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#f3f3f3';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    for (let i = 0; i < text.length; i++) {
-      ctx.font = `${24 + Math.random() * 8}px Arial`;
-      ctx.fillStyle = `rgb(${50 + Math.random()*150},${50 + Math.random()*150},${50 + Math.random()*150})`;
-      ctx.save();
-      ctx.translate(20 + i*18, 28 + Math.random()*4);
-      ctx.rotate((Math.random() - 0.5) * 0.4);
-      ctx.fillText(text[i], 0, 0);
-      ctx.restore();
-    }
-    for (let i = 0; i < 8; i++) {
-      ctx.strokeStyle = `rgba(0,0,0,${Math.random()*0.3})`;
-      ctx.beginPath();
-      ctx.moveTo(Math.random()*canvas.width, Math.random()*canvas.height);
-      ctx.lineTo(Math.random()*canvas.width, Math.random()*canvas.height);
-      ctx.stroke();
-    }
+const fetchCaptcha = async () => {
+  captchaLoading.value = true;
+  try {
+    const response = await axios.get('http://localhost:3000/api/captcha'); 
+    captchaImage.value = response.data.image;
+    captchaToken.value = response.data.token;
+    form.value.captchaInput = ''; // Reset ô nhập
+  } catch (error) {
+    console.error("Lỗi lấy captcha:", error);
+    toast.error("Không tải được mã xác nhận.");
+  } finally {
+    captchaLoading.value = false;
   }
 };
 
-onMounted(() => {
-  generateCaptcha();
-});
+const togglePassword = () => {
+  showPassword.value = !showPassword.value;
+};
 
+// --- HÀM ĐĂNG NHẬP (LOGIC CHÍNH) ---
 const login = async () => {
-  if (form.value.captchaInput.trim().toUpperCase() !== captchaText.value) {
-    toast.error('Mã xác minh không đúng!');
-    generateCaptcha();
-    form.value.captchaInput = '';
+  if (isCaptchaRequired.value && !form.value.captchaInput) {
+    toast.warning('Vui lòng nhập mã xác nhận!');
     triggerShake();
     return;
   }
+
   loading.value = true;
   try {
-    // Only send username and password
     await authStore.login({
       username: form.value.username,
       password: form.value.password,
+      captchaValue: isCaptchaRequired.value ? form.value.captchaInput : null,
+      captchaToken: isCaptchaRequired.value ? captchaToken.value : null
     });
+
     const userRole = authStore.user?.role?.toLowerCase();
     if (userRole === 'customer') {
       router.push('/customer/dashboard');
@@ -263,26 +265,31 @@ const login = async () => {
     } else {
       toast.error('Vai trò người dùng không được hỗ trợ.');
       authStore.logout();
-      triggerShake();
     }
+
   } catch (error) {
-    console.error('Login error:', error.response?.data);
-    const errorMsg = error.response?.data?.error;
-    if (errorMsg === 'Tên người dùng không tồn tại') {
-      toast.error('Tên người dùng không tồn tại!');
-    } else if (errorMsg === 'Mật khẩu không đúng') {
-      toast.error('Mật khẩu không đúng!');
+    const data = error.response?.data;
+    const errorMsg = data?.message || data?.error || 'Đăng nhập thất bại!';
+
+    
+    if (data?.requireCaptcha) {
+      if (!isCaptchaRequired.value) {
+        isCaptchaRequired.value = true;
+        toast.warning('Phát hiện truy cập bất thường. Vui lòng nhập Captcha.');
+        fetchCaptcha();
+      } else {
+        toast.error('Mã xác nhận không đúng hoặc đã hết hạn.');
+        fetchCaptcha();
+      }
     } else {
-      toast.error(errorMsg || 'Đăng nhập thất bại!');
+      console.error('Login error:', error);
+      toast.error(errorMsg);
     }
+    
     triggerShake();
   } finally {
     loading.value = false;
   }
-};
-
-const togglePassword = () => {
-  showPassword.value = !showPassword.value;
 };
 </script>
 
@@ -954,9 +961,9 @@ const togglePassword = () => {
 }
 
 .login-divider {
-  text-align: center;
-  margin: 14px 0;
   position: relative;
+  text-align: center;
+  margin: 20px 0;
 }
 
 .login-divider::before {
@@ -966,15 +973,20 @@ const togglePassword = () => {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+  background: #e2e8f0; /* Màu xám nhạt */
+  z-index: 0;
 }
 
 .divider-text {
-  background: white;
-  padding: 0 20px;
-  color: #718096;
+  position: relative;
+  z-index: 1;
+  background-color: #ffffff; 
+  padding: 0 15px;
+  color: #a0aec0;
   font-size: 14px;
 }
+
+
 
 .social-login {
   display: flex;
@@ -1152,5 +1164,54 @@ const togglePassword = () => {
 }
 .shake {
   animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+.captcha-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.captcha-box {
+  flex: 1;
+  background-color: #f7fafc; /* Màu nền nhẹ cho ảnh */
+  border: 1px solid #edf2f7;
+  border-radius: 8px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Chỉnh ảnh SVG nằm gọn trong khung */
+.captcha-box :deep(svg) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.refresh-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #e2e8f0;
+  background: white;
+  color: #667eea;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.refresh-btn:hover {
+  border-color: #667eea;
+  background: #ebf4ff;
+  transform: rotate(15deg);
+}
+
+.mt-2 {
+  margin-top: 0.5rem;
 }
 </style>

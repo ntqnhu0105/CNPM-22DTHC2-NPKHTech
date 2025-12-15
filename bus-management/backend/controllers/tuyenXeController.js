@@ -3,8 +3,12 @@ const { validationResult } = require('express-validator');
 
 const getTuyenXe = async (req, res, next) => {
   try {
-    const { page, limit } = req.query;
-    const result = await getAllTuyenXe({ page: parseInt(page), limit: parseInt(limit) });
+    const { page, limit, search } = req.query;
+    const result = await getAllTuyenXe({ 
+        page: parseInt(page), 
+        limit: parseInt(limit), 
+        search 
+    });
     res.json({
       data: result.tuyenXes,
       pagination: { total: result.total, page: result.page, limit: result.limit },

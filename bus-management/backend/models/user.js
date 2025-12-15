@@ -11,7 +11,9 @@ const UserSchema = new Schema({
   },
   khachHangId: { type: Schema.Types.ObjectId, ref: 'KhachHang', default: null },
   nhanVienId: { type: Schema.Types.ObjectId, ref: 'NhanVien', default: null },
-  lastLogin: { type: Date }
+  lastLogin: { type: Date },
+  resetPasswordOtp: { type: String, default: null },
+  resetPasswordExpires: { type: Date, default: null }
 });
 
 module.exports = mongoose.model('User', UserSchema);

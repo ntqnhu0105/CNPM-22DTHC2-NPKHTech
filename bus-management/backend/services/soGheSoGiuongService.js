@@ -35,16 +35,25 @@ const bulkCreateSoGheSoGiuong = async ({ xeId, soGhe, force = false }) => {
   }
 
   const seats = [];
-  const rows = Math.ceil(soGhe / 4);
-  for (let i = 0; i < rows; i++) {
-    ['A', 'B', 'C', 'D'].forEach((col, index) => {
-      if (seats.length < soGhe) {
-        seats.push({
-          maSoGhe: `${col}${i + 1}`,
-          xeId,
-          trangThai: 'Available',
-        });
-      }
+  
+  
+  const seatsPerFloor = Math.ceil(soGhe / 2); 
+
+  for (let i = 1; i <= seatsPerFloor; i++) {
+    const seatCode = `A${i.toString().padStart(2, '0')}`;
+    seats.push({
+      maSoGhe: seatCode,
+      xeId,
+      trangThai: 'Available',
+    });
+  }
+
+  for (let i = 1; i <= (soGhe - seatsPerFloor); i++) {
+    const seatCode = `B${i.toString().padStart(2, '0')}`;
+    seats.push({
+      maSoGhe: seatCode,
+      xeId,
+      trangThai: 'Available',
     });
   }
 

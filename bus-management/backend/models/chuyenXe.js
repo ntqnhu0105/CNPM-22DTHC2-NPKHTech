@@ -16,5 +16,7 @@ const ChuyenXeSchema = new Schema({
 
 ChuyenXeSchema.index({ xeId: 1 });
 ChuyenXeSchema.index({ thoiGianKhoiHanh: 1 });
+ChuyenXeSchema.index({ tuyenXeId: 1 });
+ChuyenXeSchema.index({ trangThaiChuyen: 1 });
 
 module.exports = mongoose.model('ChuyenXe', ChuyenXeSchema);

@@ -3,7 +3,10 @@ const { validationResult } = require('express-validator');
 
 const getThongBao = async (req, res, next) => {
   try {
-    const { page, limit, khachHangId } = req.query;
+    const { page, limit } = req.query;
+    
+    const khachHangId = req.user.khachHangId;
+
     const result = await getAllThongBao({ page: parseInt(page), limit: parseInt(limit), khachHangId });
     res.json({
       data: result.thongBaos,
@@ -64,7 +67,7 @@ const markThongBaoAsRead = async (req, res, next) => {
 
 const markAllThongBaoAsRead = async (req, res, next) => {
   try {
-    const { khachHangId } = req.body;
+    const khachHangId = req.user.khachHangId; 
     const result = await markAllAsRead(khachHangId);
     res.json(result);
   } catch (err) {

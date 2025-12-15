@@ -8,5 +8,6 @@ const TuyenXeSchema = new Schema({
   thoiGianDuKien: { type: String },
   moTa: { type: String, maxlength: 200 }
 });
+TuyenXeSchema.index({ diemDi: 1, diemDen: 1 });
 
 module.exports = mongoose.model('TuyenXe', TuyenXeSchema);

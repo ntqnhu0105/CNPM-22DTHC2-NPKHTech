@@ -164,6 +164,31 @@
               </small>
             </div>
             
+            <div class="form-group captcha-group">
+              <div class="captcha-display">
+                <div v-html="captchaImage" class="captcha-svg"></div>
+                
+                <button type="button" class="refresh-btn" @click="fetchCaptcha" title="Đổi mã khác">
+                  <i class="fas fa-sync-alt" :class="{ 'fa-spin': captchaLoading }"></i>
+                </button>
+              </div>
+
+              <div class="input-wrapper">
+                <div class="input-icon-container">
+                  <i class="fas fa-shield-alt input-icon"></i>
+                </div>
+                <input 
+                  v-model="captchaInput" 
+                  type="text" 
+                  class="form-input" 
+                  placeholder="Nhập mã xác nhận"
+                  required 
+                  autocomplete="off"
+                />
+                <div class="input-focus-border"></div>
+              </div>
+            </div>
+
             <div class="form-options">
               <label class="checkbox-wrapper">
                 <input type="checkbox" v-model="agreeToTerms" class="checkbox-input" required>
@@ -312,6 +337,8 @@ import { ref, computed } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
 import { Modal } from 'bootstrap';
+import { onMounted } from 'vue';
+import axios from 'axios';
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -327,6 +354,10 @@ const form = ref({
 const loading = ref(false);
 const showPassword = ref(false);
 const agreeToTerms = ref(false);
+const captchaImage = ref('');
+const captchaToken = ref('');
+const captchaInput = ref('');
+const captchaLoading = ref(false);
 
 // Password strength calculation
 const passwordStrength = computed(() => {
@@ -356,6 +387,25 @@ const togglePassword = () => {
   showPassword.value = !showPassword.value;
 };
 
+const fetchCaptcha = async () => {
+  captchaLoading.value = true;
+  try {
+    const response = await axios.get('http://localhost:3000/api/captcha'); 
+    
+    captchaImage.value = response.data.image; // SVG ảnh
+    captchaToken.value = response.data.token; // Token mã hóa
+    captchaInput.value = ''; // Reset ô nhập liệu
+  } catch (error) {
+    console.error("Lỗi lấy captcha:", error);
+  } finally {
+    captchaLoading.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchCaptcha();
+});
+
 const showCustomerInfoModal = () => {
   if (!agreeToTerms.value) {
     return;
@@ -366,7 +416,11 @@ const showCustomerInfoModal = () => {
     alert('Vui lòng điền đầy đủ tên người dùng và mật khẩu');
     return;
   }
-  
+  if (!captchaInput.value) {
+    alert('Vui lòng nhập mã xác nhận Captcha');
+    return;
+  }
+
   const modal = new Modal(document.getElementById('customerInfoModal'));
   modal.show();
 };
@@ -380,7 +434,11 @@ const register = async () => {
   
   loading.value = true;
   try {
-    await authStore.register(form.value);
+    await authStore.register({
+      ...form.value,
+      captchaValue: captchaInput.value, // Người dùng nhập
+      captchaToken: captchaToken.value  // Token từ server
+    });
     
     // Close modal
     const modal = Modal.getInstance(document.getElementById('customerInfoModal'));
@@ -396,6 +454,47 @@ const register = async () => {
 </script>
 
 <style scoped>
+.captcha-group {
+  margin-bottom: 20px;
+}
+
+.captcha-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  padding: 5px 10px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 10px;
+  height: 60px;
+}
+
+.captcha-svg {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.captcha-svg :deep(svg) {
+  height: 50px;
+  width: 100%;
+}
+
+.refresh-btn {
+  background: none;
+  border: none;
+  color: #667eea;
+  cursor: pointer;
+  padding: 8px;
+  font-size: 18px;
+  transition: all 0.3s ease;
+}
+
+.refresh-btn:hover {
+  color: #764ba2;
+  transform: rotate(180deg);
+}
 .register-container {
   min-height: 100vh;
   display: flex;

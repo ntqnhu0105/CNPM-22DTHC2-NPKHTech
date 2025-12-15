@@ -1,5 +1,48 @@
-const { getAllKhachHang, createKhachHang, updateKhachHang, deleteKhachHang: deleteKhachHangService } = require('../services/khachHangService');
+const { 
+  getAllKhachHang, 
+  createKhachHang, 
+  updateKhachHang: updateKhachHangService,
+  deleteKhachHang: deleteKhachHangService 
+} = require('../services/khachHangService');
+
 const { validationResult } = require('express-validator');
+const { KhachHang } = require('../models');
+
+const getProfile = async (req, res, next) => {
+  try {
+    const khachHangId = req.user.khachHangId;
+    if (!khachHangId) {
+      return res.status(404).json({ success: false, message: "Tài khoản này chưa liên kết hồ sơ khách hàng" });
+    }
+    const khachHang = await KhachHang.findById(khachHangId);
+    if (!khachHang) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy hồ sơ" });
+    }
+    res.json({ success: true, data: khachHang });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const updateProfile = async (req, res, next) => {
+  try {
+    const khachHangId = req.user.khachHangId;
+    
+    if (!khachHangId) {
+        return res.status(400).json({ success: false, message: 'Tài khoản này chưa liên kết thông tin khách hàng' });
+    }
+
+    const updatedData = await updateKhachHangService(khachHangId, req.body);
+
+    res.json({ 
+        success: true, 
+        message: "Cập nhật hồ sơ thành công", 
+        data: updatedData 
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
 const getKhachHang = async (req, res, next) => {
   try {
@@ -33,7 +76,7 @@ const putKhachHang = async (req, res, next) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const khachHang = await updateKhachHang(req.params.id, req.body);
+    const khachHang = await updateKhachHangService(req.params.id, req.body);
     res.json({ data: khachHang, message: 'Cập nhật khách hàng thành công' });
   } catch (err) {
     next(err);
@@ -58,4 +101,6 @@ module.exports = {
   postKhachHang,
   putKhachHang,
   deleteKhachHang,
+  getProfile,
+  updateProfile,
 };

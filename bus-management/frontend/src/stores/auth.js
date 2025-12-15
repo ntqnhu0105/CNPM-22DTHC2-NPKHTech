@@ -26,18 +26,20 @@ export const useAuthStore = defineStore('auth', {
         throw error;
       }
     },
-    async login({ username, password }) {
+    async login(credentials) {
       try {
-        const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/login`, { username, password });
+        const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/login`, credentials);
+        
         this.user = response.data.user;
         this.token = response.data.token;
         localStorage.setItem('token', this.token);
         localStorage.setItem('user', JSON.stringify(this.user));
+        
         axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+        
         toast.success('Đăng nhập thành công!');
       } catch (error) {
-        console.error('Login error:', error.response?.data); // Debug log
-        toast.error(error.response?.data?.error || 'Đăng nhập thất bại');
+        console.error('Login error:', error.response?.data);
         throw error;
       }
     },

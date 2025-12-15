@@ -37,6 +37,6 @@ router.delete(
   authMiddleware(['Admin', 'Staff']),
   deleteLichSuVeXe
 );
-router.get('/customer', authMiddleware(['Customer']), getLichSuVeXeByCustomer);
+router.get('/logs', authMiddleware(['Customer']), getLichSuVeXeByCustomer);
 
 module.exports = router;

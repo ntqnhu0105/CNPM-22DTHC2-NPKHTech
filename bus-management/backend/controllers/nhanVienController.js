@@ -24,7 +24,7 @@ const postNhanVien = async (req, res, next) => {
     const result = await nhanVienService.createNhanVien(req.body);
     res.status(201).json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    next(err);
   }
 };
 
@@ -37,7 +37,7 @@ const putNhanVien = async (req, res, next) => {
     const result = await nhanVienService.updateNhanVien(req.params.id, req.body);
     res.status(200).json(result);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    next(err);
   }
 };
 
@@ -46,7 +46,7 @@ const deleteNhanVien = async (req, res, next) => {
     const result = await nhanVienService.deleteNhanVien(req.params.id);
     res.status(200).json(result);
   } catch (error) {
-    res.status(404).json({ message: error.message });
+    next(err);
   }
 };
 

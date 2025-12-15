@@ -1,12 +1,15 @@
 const express = require('express');
 const { body, param } = require('express-validator');
-const { getVeXe, postVeXe, postVeXeAdmin, putVeXe, deleteVeXe, bookVeXe, getAvailableSeats } = require('../controllers/veXeController'); // Add bookVeXe
+const { 
+  getVeXe, postVeXe, getMyTickets, postVeXeAdmin, putVeXe, deleteVeXe, 
+  bookVeXe, getAvailableSeats, payVeXeController, cancelVeXeController 
+} = require('../controllers/veXeController');
 const authMiddleware = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
+router.get('/my-tickets', authMiddleware(['Customer']), getMyTickets);
 router.get('/', authMiddleware(['Admin', 'Staff', 'Customer']), getVeXe);
-
 // Route cho admin/staff tạo vé xe
 router.post(
   '/admin',
@@ -101,7 +104,7 @@ router.post(
     body('captchaText').notEmpty().withMessage('Captcha là bắt buộc')
   ],
   authMiddleware(['Customer']),
-  require('../controllers/veXeController').payVeXeController
+  payVeXeController
 );
 
 // Hủy vé (Cancel) - Customer
@@ -112,7 +115,7 @@ router.post(
     body('lyDoHuy').optional().isLength({ max: 200 }).withMessage('Lý do hủy tối đa 200 ký tự')
   ],
   authMiddleware(['Customer']),
-  require('../controllers/veXeController').cancelVeXeController
+  cancelVeXeController
 );
 
 module.exports = router;

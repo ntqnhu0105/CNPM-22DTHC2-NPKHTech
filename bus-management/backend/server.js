@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
+const startCronJobs = require('./utils/cronJob');
+
 const khachHangRoutes = require('./routes/khachHangRoutes');
 const authRoutes = require('./routes/authRoutes');
 const chuyenXeRoutes = require('./routes/chuyenXeRoutes');
@@ -33,6 +35,7 @@ app.use(express.json());
 
 // Kết nối MongoDB
 connectDB();
+startCronJobs();
 
 // Routes
 app.use('/api/khachhang', khachHangRoutes);

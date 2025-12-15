@@ -1,12 +1,23 @@
 const { TuyenXe } = require('../models');
 
-const getAllTuyenXe = async ({ page = 1, limit = 10 }) => {
+const getAllTuyenXe = async ({ page = 1, limit = 10, search }) => { 
   const skip = (page - 1) * limit;
-  const tuyenXes = await TuyenXe.find()
+  
+  let query = {};
+  if (search) {
+    query = {
+      $or: [
+        { diemDi: { $regex: search, $options: 'i' } }, 
+        { diemDen: { $regex: search, $options: 'i' } }
+      ]
+    };
+  }
+
+  const tuyenXes = await TuyenXe.find(query)
     .skip(skip)
     .limit(limit)
     .lean();
-  const total = await TuyenXe.countDocuments();
+  const total = await TuyenXe.countDocuments(query);
   return { tuyenXes, total, page, limit };
 };
 

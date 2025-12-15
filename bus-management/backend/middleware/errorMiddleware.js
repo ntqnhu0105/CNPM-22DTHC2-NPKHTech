@@ -1,6 +1,10 @@
 const errorMiddleware = (err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ error: err.message || 'Có lỗi xảy ra!' });
+  const statusCode = err.statusCode || 500;
+  const message = err.message || 'Lỗi hệ thống server';
+  res.status(statusCode).json({ 
+    success: false, 
+    message: message 
+  });
 };
-
 module.exports = errorMiddleware;

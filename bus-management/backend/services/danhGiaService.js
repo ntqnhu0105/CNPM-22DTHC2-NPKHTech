@@ -1,4 +1,4 @@
-const { DanhGia, KhachHang, ChuyenXe, NhaXe } = require('../models');
+const { DanhGia, KhachHang, ChuyenXe, NhaXe, VeXe } = require('../models');
 
 const getAllDanhGia = async ({ page = 1, limit = 10 }) => {
   const skip = (page - 1) * limit;
@@ -18,12 +18,29 @@ const createDanhGia = async (data) => {
 
   const khachHang = await KhachHang.findById(khachHangId);
   if (!khachHang) throw new Error('Khách hàng không tồn tại');
+  
   if (chuyenXeId) {
     const chuyenXe = await ChuyenXe.findById(chuyenXeId);
     if (!chuyenXe) throw new Error('Chuyến xe không tồn tại');
   }
+  
   const nhaXe = await NhaXe.findById(nhaXeId);
   if (!nhaXe) throw new Error('Nhà xe không tồn tại');
+
+  const veXe = await VeXe.findOne({
+    khachHangId: khachHangId,
+    chuyenXeId: chuyenXeId,
+    trangThai: { $in: ['Paid', 'Completed'] } 
+  });
+
+  if (!veXe) {
+    throw new Error('Bạn chưa mua vé hoặc chưa hoàn thành chuyến đi này nên không thể đánh giá.');
+  }
+
+  const existingReview = await DanhGia.findOne({ khachHangId, chuyenXeId });
+  if (existingReview) {
+    throw new Error('Bạn đã đánh giá chuyến xe này rồi.');
+  }
 
   const danhGia = new DanhGia({ khachHangId, chuyenXeId, nhaXeId, rating, comment, ngayDanhGia });
   return await danhGia.save();
